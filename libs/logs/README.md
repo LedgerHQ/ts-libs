@@ -1,5 +1,8 @@
 # @ledgerhq/logs
 
+> [!NOTE]
+> **Status: STABLE**
+
 Utility library used by all Ledger libraries to dispatch logs in a unified way.
 
 ## Install
