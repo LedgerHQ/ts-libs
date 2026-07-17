@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "libs/*": {
+      "project": ["src/**/*.ts"]
+    }
+  },
+  "rules": {
+    "binaries": "off",
+    "dependencies": "error",
+    "devDependencies": "off",
+    "duplicates": "error",
+    "enumMembers": "warn",
+    "exports": "warn",
+    "files": "error",
+    "nsExports": "off",
+    "nsTypes": "off",
+    "optionalPeerDependencies": "off",
+    "types": "warn",
+    "unlisted": "off",
+    "unresolved": "off"
+  },
+  "ignoreExportsUsedInFile": true
+}

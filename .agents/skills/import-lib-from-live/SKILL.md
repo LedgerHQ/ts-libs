@@ -115,6 +115,24 @@ Replace any `"rimraf"` clean scripts with `"rm -rf lib lib-es"`.
 
 Replace any `workspace:*` runtime deps with their pinned npm version (look up current published version).
 
+Remove wildcard sub-path exports from the `exports` field — keep only the `"."` root and `"./package.json"` entries:
+
+```json
+{
+  "exports": {
+    ".": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  }
+}
+```
+
+Wildcard patterns like `"./*"`, `"./lib/*"`, `"./lib-es/*"` make knip treat every `src/*.ts` file as an entry point, preventing detection of unused files. If the lib genuinely exposes named sub-paths (e.g. `@ledgerhq/foo/bar`), list them explicitly instead.
+
 ### 7. Patch `tsconfig.json`
 
 Change `"extends"` to point to the ts-libs root:
