@@ -10,7 +10,7 @@
 1. Create your branch from `develop`.
 2. Run `mise install` to get the correct toolchain (node, pnpm, gitleaks, hk…).
 3. Run `pnpm install` to install dependencies.
-4. Git hooks activate automatically after `mise install` — commit messages are validated against [Conventional Commits](https://www.conventionalcommits.org/).
+4. Git hooks activate automatically after `mise install` (pre-commit: format check + secret scan).
 
 ## Branch & Commit Conventions
 
@@ -25,7 +25,7 @@
 
 ### Commit messages
 
-Enforced locally by commitlint. Format:
+We follow [Conventional Commits](https://www.conventionalcommits.org/). Format:
 
 ```
 <type>(<scope>): <description>
@@ -35,7 +35,7 @@ Scope is the library name or area: `logs`, `devices`, `ci`, `deps`, etc.
 
 ### Rebase & merge strategy
 
-Always rebase on `develop` before opening a PR. On a draft branch, prefer `git push origin +<branch>` (amend + force-push) over accumulating fix commits.
+Always rebase on `develop` before opening a PR. On a draft branch, prefer amend + `git push --force-with-lease origin <branch>` over accumulating fix commits.
 
 ## The PR Lifecycle
 
