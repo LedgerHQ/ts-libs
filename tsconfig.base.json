@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "isolatedModules": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "customConditions": ["@ledgerhq/source"]
+  }
+}

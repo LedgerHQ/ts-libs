@@ -1,0 +1,17 @@
+packages:
+  - "libs/*"
+
+allowBuilds:
+  "@swc/core": true
+  nx: true
+  unrs-resolver: true
+
+catalog:
+  typescript: "7.0.2"
+  "@types/node": "26.1.1"
+  "@types/jest": "30.0.0"
+  jest: "30.4.2"
+  "@swc/jest": "0.2.39"
+  "@swc/core": "1.15.43"
+  oxlint: "1.74.0"
+  oxfmt: "0.59.0"

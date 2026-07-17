@@ -1,0 +1,8 @@
+node_modules/
+lib/
+lib-es/
+.nx/
+*.tsbuildinfo
+.DS_Store
+dist/
+coverage/

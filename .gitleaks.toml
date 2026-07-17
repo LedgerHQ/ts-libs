@@ -1,0 +1,16 @@
+title = "Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "seed-phrase"
+description = "Detected a BIP39 mnemonic seed phrase."
+regex = '''(?i)\b(?:seed|dev[_\s]?seed|mnemonic|pass[_\s]?phrase|recovery[_\s]?phrase)\s*[:=\s]\s*(?:[\x60'"]\s*)?((?:[a-zA-Z]{3,8}\s+){10,23}[a-zA-Z]{3,8})(?:\s*[\x60'"]|\s*[,;]|\b)'''
+keywords = ["seed", "mnemonic", "pass", "recovery", "phrase"]
+
+[[rules]]
+id = "seed-array"
+description = "Detected a BIP39 mnemonic seed phrase in array format."
+regex = '''(?i)\b(?:seed|dev[_\s]?seed|mnemonic|pass[_\s]?phrase|recovery[_\s]?phrase)\s*[:=]\s*(\[\s*(?:["'][a-zA-Z]{3,8}["']\s*,?\s*){12,24}\])'''
+keywords = ["seed", "mnemonic", "pass", "recovery", "phrase"]
