@@ -1,15 +1,16 @@
 # Contributing to ts-libs
 
-Thanks for contributing! These guidelines apply to internal and external contributors, including agents. Please read fully before opening a pull request.
+`ts-libs` is an internal Ledger monorepo that hosts reusable TypeScript libraries extracted from `ledger-live` and other Ledger stacks. These guidelines apply to contributors and agents. Please read fully before opening a pull request.
 
 > [!IMPORTANT]
-> We are currently accepting bug fixes and invited contributions only. Feature PRs that do not align with our roadmap will be closed without extensive review.
+> The primary activity here is **migrating libraries from `ledger-live`** — not creating new ones from scratch. PRs that introduce libraries unrelated to the Ledger ecosystem or that duplicate packages already handled in `ledger-live` will be closed without extensive review.
 
 ## Getting Started
 
-1. External contributors should fork the repository.
-2. Create your branch from `develop`.
-3. Follow the [README](README.md) to set up locally (`mise install`, `pnpm install`).
+1. Create your branch from `develop`.
+2. Run `mise install` to get the correct toolchain (node, pnpm, gitleaks, hk…).
+3. Run `pnpm install` to install dependencies.
+4. Git hooks activate automatically after `mise install` — commit messages are validated against [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## Branch & Commit Conventions
 
@@ -17,14 +18,14 @@ Thanks for contributing! These guidelines apply to internal and external contrib
 
 | Prefix | When to use |
 |--------|-------------|
-| `feat/` | Adding a new library or feature |
-| `bugfix/` | Fixing a bug |
+| `feat/` | Migrating a new library from ledger-live |
+| `bugfix/` | Fixing a bug in an existing library |
 | `support/` | Refactors, tests, CI, tooling improvements |
 | `chore/` | Maintenance, config, dependency updates |
 
 ### Commit messages
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/).
+Enforced locally by commitlint. Format:
 
 ```
 <type>(<scope>): <description>
@@ -34,7 +35,7 @@ Scope is the library name or area: `logs`, `devices`, `ci`, `deps`, etc.
 
 ### Rebase & merge strategy
 
-Always prefer rebasing on `develop` before opening a PR.
+Always rebase on `develop` before opening a PR. On a draft branch, prefer `git push origin +<branch>` (amend + force-push) over accumulating fix commits.
 
 ## The PR Lifecycle
 
@@ -52,6 +53,7 @@ flowchart LR
 Before marking your PR ready for review, ensure all of the following pass:
 
 - **format** — `pnpm format`
+- **knip** — `pnpm knip` (no unused files or exports)
 - **lint** — `pnpm lint`
 - **typecheck** — `pnpm typecheck`
 - **tests** — `pnpm test`
@@ -70,16 +72,29 @@ We use [changesets](https://github.com/changesets/changesets) for versioning. Ru
 pnpm changelog
 ```
 
-A changeset is **required** for any change to a library's public API or behavior.
+A changeset is **required** for any change to a library's public API or behaviour. It is not required for tooling, CI, or documentation-only changes.
 
-## Adding a New Library
+## Migrating a Library from ledger-live
 
-Use the `/import-lib-from-live` skill (for migrations from ledger-live) or follow the conventions in [AGENTS.md](AGENTS.md):
+Use the `/import-lib-from-live` skill. It handles discovery, dependency audit, file copy, config patching, and build verification. Once imported, set the library status in its README (see below).
 
-- `libs/<name>/src/` — source files
-- `package.json` — use `catalog:` for all shared devDependencies
-- `tsconfig.json` — extends `../../tsconfig.base.json`, includes `declaration: true`
-- Scripts: `build`, `lint`, `typecheck`, `test`, `clean`
+## Library status
+
+Every library README must carry a status block immediately after the title:
+
+| Status | Alert | Meaning |
+|---|---|---|
+| `STABLE` | `[!NOTE]` | Production-ready, actively maintained, semver guaranteed |
+| `DEPRECATED` | `[!WARNING]` | Superseded — migration path documented in the block |
+| `UNSTABLE` | `[!CAUTION]` | API not stable, breaking changes possible without a major bump |
+
+Example for a deprecated library:
+
+```markdown
+> [!WARNING]
+> **Status: DEPRECATED**
+> Use [`@ledgerhq/replacement`](link) instead.
+```
 
 ## Appendix: Tips
 
