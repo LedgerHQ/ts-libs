@@ -77,7 +77,39 @@ Create `libs/<name>/` in ts-libs. Copy from ledger-live:
 | `README.md`                    |                 |
 | Any other config files at root |                 |
 
-### 6. Patch `package.json`
+### 6. Set library status in README
+
+Ask the user (or infer from the migration context) which status applies to this library:
+
+| Status | Meaning |
+|---|---|
+| **STABLE** | Production-ready, actively maintained, semver guaranteed |
+| **DEPRECATED** | Superseded or being phased out; migration path required |
+| **UNSTABLE** | API not stable; breaking changes possible without a major bump |
+
+Prepend the appropriate block to the top of `libs/<name>/README.md`:
+
+**STABLE:**
+```markdown
+> [!NOTE]
+> **Status: STABLE**
+```
+
+**DEPRECATED:**
+```markdown
+> [!WARNING]
+> **Status: DEPRECATED**
+> Use [`@ledgerhq/<replacement>`](link) instead.
+```
+
+**UNSTABLE:**
+```markdown
+> [!CAUTION]
+> **Status: UNSTABLE**
+> API may change without notice. Not recommended for production use.
+```
+
+### 7. Patch `package.json`
 
 Update these fields:
 
@@ -133,7 +165,7 @@ Remove wildcard sub-path exports from the `exports` field — keep only the `"."
 
 Wildcard patterns like `"./*"`, `"./lib/*"`, `"./lib-es/*"` make knip treat every `src/*.ts` file as an entry point, preventing detection of unused files. If the lib genuinely exposes named sub-paths (e.g. `@ledgerhq/foo/bar`), list them explicitly instead.
 
-### 7. Patch `tsconfig.json`
+### 8. Patch `tsconfig.json`
 
 Change `"extends"` to point to the ts-libs root:
 
@@ -160,7 +192,7 @@ Also ensure `declaration: true`, `declarationMap: true`, and `types: ["jest", "n
 
 Remove any ledger-live-specific path aliases or references.
 
-### 8. Patch `jest.config.ts`
+### 9. Patch `jest.config.ts`
 
 If the file imports from a ledger-live base config (e.g. `../../jest.config.ts`), replace it with a self-contained config:
 
@@ -178,7 +210,7 @@ export default {
 };
 ```
 
-### 9. Ensure nx targets are defined
+### 10. Ensure nx targets are defined
 
 In `package.json`, ensure the `scripts` block has all four targets nx expects:
 
@@ -194,7 +226,7 @@ In `package.json`, ensure the `scripts` block has all four targets nx expects:
 }
 ```
 
-### 10. Install and build
+### 11. Install and build
 
 ```bash
 mise exec -- pnpm install
@@ -206,7 +238,7 @@ If pnpm install fails with `ERR_PNPM_IGNORED_BUILDS`, set the new package's buil
 
 Fix any other errors that arise (usually tsconfig path issues or missing deps).
 
-### 11. Report
+### 12. Report
 
 After a successful build, report:
 
