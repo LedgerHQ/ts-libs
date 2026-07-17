@@ -32,6 +32,9 @@ jobs:
       - name: Format check
         run: pnpm format
 
+      - name: Knip
+        run: pnpm knip
+
       - name: Build
         run: pnpm build
 
