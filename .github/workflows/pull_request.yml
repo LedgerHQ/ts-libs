@@ -1,8 +1,8 @@
 name: "[Checks] Pull Request"
 on:
   push:
-    branches-ignore:
-      - main
+    branches:
+      - develop
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -10,7 +10,7 @@ env:
   FORCE_COLOR: "1"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
