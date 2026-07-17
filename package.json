@@ -19,6 +19,7 @@
     "@commitlint/config-conventional": "catalog:",
     "knip": "6.27.0",
     "nx": "^23.1.0",
+    "oxlint": "catalog:",
     "oxfmt": "catalog:",
     "typescript": "catalog:"
   },

@@ -1,0 +1,67 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "plugins": ["typescript", "eslint", "import", "oxc", "unicorn"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off"
+  },
+  "ignorePatterns": ["node_modules", "**/lib/**", "**/lib-es/**"],
+  "rules": {
+    "eslint/no-inner-declarations": "off",
+    "eslint/no-empty-pattern": "warn",
+    "eslint/no-constant-binary-expression": "warn",
+    "eslint/no-unused-expressions": "warn",
+    "eslint/no-console": "warn",
+    "eslint/no-restricted-imports": ["error", { "paths": ["lodash"] }],
+    "import/no-duplicates": "error",
+    "import/no-named-as-default": "off",
+    "unicorn/no-useless-fallback-in-spread": "off",
+    "unicorn/no-useless-spread": "off",
+    "unicorn/no-new-array": "off",
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-namespace": ["error", { "allowDeclarations": true }],
+    "typescript/no-empty-function": "off",
+    "typescript/no-deprecated": "off",
+    "typescript/consistent-type-assertions": ["warn", { "assertionStyle": "as" }],
+    "typescript/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "caughtErrors": "all",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "typescript/no-require-imports": "warn",
+    "typescript/no-empty-object-type": "warn",
+    "typescript/no-unsafe-function-type": "warn",
+    "typescript/no-unsafe-declaration-merging": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "plugins": ["jest"],
+      "env": { "jest": true },
+      "rules": {
+        "typescript/no-explicit-any": "warn",
+        "eslint/no-console": "off",
+        "jest/no-focused-tests": "error",
+        "jest/no-disabled-tests": "warn",
+        "jest/no-conditional-expect": "warn",
+        "jest/expect-expect": "warn",
+        "jest/require-to-throw-message": "warn",
+        "jest/valid-title": "warn",
+        "jest/no-export": "off",
+        "jest/valid-describe-callback": "warn",
+        "jest/no-standalone-expect": "warn"
+      }
+    }
+  ]
+}
