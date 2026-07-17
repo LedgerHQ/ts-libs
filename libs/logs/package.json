@@ -34,7 +34,8 @@
     "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
     "lint": "oxlint ./src",
     "typecheck": "tsc --noEmit",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "coverage": "jest --coverage --passWithNoTests"
   },
   "devDependencies": {
     "@swc/core": "catalog:",
@@ -42,6 +43,7 @@
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "jest": "catalog:",
+    "jest-sonar": "catalog:",
     "oxlint": "catalog:",
     "typescript": "catalog:"
   }

@@ -135,6 +135,7 @@ Replace devDependencies that are in the workspace `catalog:` with `catalog:` ref
     "@types/node": "catalog:",
     "@types/jest": "catalog:",
     "jest": "catalog:",
+    "jest-sonar": "catalog:",
     "@swc/jest": "catalog:",
     "@swc/core": "catalog:"
   }
@@ -199,14 +200,14 @@ If the file imports from a ledger-live base config (e.g. `../../jest.config.ts`)
 ```typescript
 export default {
   transform: {
-    "^.+\\.(ts|tsx)$": [
-      "@swc/jest",
-      {
-        jsc: { parser: { syntax: "typescript" } },
-      },
-    ],
+    "^.+\\.(ts|tsx)$": ["@swc/jest", { jsc: { parser: { syntax: "typescript" } } }],
   },
   testEnvironment: "node",
+  coverageReporters: ["json", ["lcov", { projectRoot: "../../" }], "json-summary", "text"],
+  reporters: [
+    "default",
+    ["jest-sonar", { outputName: "sonar-executionTests-report.xml", reportedFilePath: "absolute" }],
+  ],
 };
 ```
 
@@ -221,6 +222,7 @@ In `package.json`, ensure the `scripts` block has all four targets nx expects:
     "lint": "oxlint ./src",
     "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
+    "coverage": "jest --coverage --passWithNoTests",
     "clean": "rm -rf lib lib-es"
   }
 }
