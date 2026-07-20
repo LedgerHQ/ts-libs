@@ -9,7 +9,7 @@ on:
 
 env:
   FORCE_COLOR: "1"
-  NPM_REGISTRY: ${{ inputs.registry || vars.NPM_SANDBOX_REGISTRY || 'ledgerhq.jfrog.io/artifactory/api/npm/ledgerlive-npm-sandbox-green' }}
+  NPM_REGISTRY: ${{ inputs.registry || vars.NPM_SANDBOX_REGISTRY || 'jfrog.ledgerlabs.net/artifactory/api/npm/ledgerlive-npm-sandbox-green' }}
 
 permissions:
   id-token: write
@@ -20,13 +20,6 @@ jobs:
     name: Build and Publish to JFrog sandbox
     runs-on: ${{ vars.RELEASE_RUNNER || 'public-ledgerhq-shared-medium' }}
     steps:
-      - name: Validate RELEASE_RUNNER is configured
-        run: |
-          if [ -z "${{ vars.RELEASE_RUNNER }}" ]; then
-            echo "::error::vars.RELEASE_RUNNER is not set — JFrog is only reachable from the private Ledger runner."
-            exit 1
-          fi
-
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
@@ -52,7 +45,5 @@ jobs:
           //${REGISTRY}/:_authToken=${NPM_REGISTRY_TOKEN}
           EOF
 
-      - name: Publish to sandbox (dist-tag=sandbox, no git tags)
-        run: pnpm release -- --no-git-tag --tag sandbox
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish to sandbox (dist-tag=sandbox)
+        run: pnpm exec changeset publish --tag sandbox
