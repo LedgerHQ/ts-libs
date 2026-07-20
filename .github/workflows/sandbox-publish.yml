@@ -1,0 +1,58 @@
+name: "[Test] Sandbox Publish"
+on:
+  workflow_dispatch:
+    inputs:
+      registry:
+        description: "npm registry host+path (no https://, no trailing slash). Defaults to ledgerlive-npm-sandbox-green."
+        type: string
+        required: false
+
+env:
+  FORCE_COLOR: "1"
+  NPM_REGISTRY: ${{ inputs.registry || vars.NPM_SANDBOX_REGISTRY || 'ledgerhq.jfrog.io/artifactory/api/npm/ledgerlive-npm-sandbox-green' }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  sandbox-publish:
+    name: Build and Publish to JFrog sandbox
+    runs-on: ${{ vars.RELEASE_RUNNER || 'public-ledgerhq-shared-medium' }}
+    steps:
+      - name: Validate RELEASE_RUNNER is configured
+        run: |
+          if [ -z "${{ vars.RELEASE_RUNNER }}" ]; then
+            echo "::error::vars.RELEASE_RUNNER is not set — JFrog is only reachable from the private Ledger runner."
+            exit 1
+          fi
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build libraries
+        run: pnpm build
+
+      - name: Login to JFrog (OIDC)
+        id: jfrog-login
+        uses: LedgerHQ/actions-security/actions/jfrog-login@3868be0ef1ec8722fbdb2c6cda90f739cbfc742d # actions/jfrog-login-1
+
+      - name: Configure npm registry
+        env:
+          NPM_REGISTRY_TOKEN: ${{ steps.jfrog-login.outputs.oidc-token }}
+        run: |
+          REGISTRY="${NPM_REGISTRY#https://}"
+          REGISTRY="${REGISTRY%/}"
+          cat << EOF >> .npmrc
+          registry=https://${REGISTRY}/
+          //${REGISTRY}/:_authToken=${NPM_REGISTRY_TOKEN}
+          EOF
+
+      - name: Publish to sandbox (dist-tag=sandbox, no git tags)
+        run: pnpm release -- --no-git-tag --tag sandbox
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
