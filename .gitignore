@@ -7,3 +7,5 @@ lib-es/
 .DS_Store
 dist/
 coverage/
+lcov.info
+sonar-executionTests-report.xml

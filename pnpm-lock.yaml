@@ -27,6 +27,9 @@ catalogs:
     jest:
       specifier: 30.4.2
       version: 30.4.2
+    jest-sonar:
+      specifier: 0.2.16
+      version: 0.2.16
     oxfmt:
       specifier: 0.60.0
       version: 0.60.0
@@ -86,6 +89,9 @@ importers:
       jest:
         specifier: 'catalog:'
         version: 30.4.2(@types/node@26.1.1)(supports-color@7.2.0)
+      jest-sonar:
+        specifier: 'catalog:'
+        version: 0.2.16
       oxlint:
         specifier: 'catalog:'
         version: 1.75.0
@@ -1888,6 +1894,10 @@ packages:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
     engines: {node: '>=8.6'}
 
+  entities@4.3.0:
+    resolution: {integrity: sha512-/iP1rZrSEJ0DTlPiX+jbzlA3eVkY/e8L8SozroF395fIqE3TYF/Nz7YOMAawta+vLmyJ/hkGNNPcSbMADCCXbg==}
+    engines: {node: '>=0.12'}
+
   env-paths@2.2.1:
     resolution: {integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==}
     engines: {node: '>=6'}
@@ -2349,6 +2359,9 @@ packages:
   jest-snapshot@30.4.1:
     resolution: {integrity: sha512-tEOkkfOMppUyeiHwjZswOQ3lcnoTnws/q5FnGIaeIh/jmoU0ZlgMYRR8sTlTj+nNGCoJ0RDq6SfxGxCsyMTPmw==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
+
+  jest-sonar@0.2.16:
+    resolution: {integrity: sha512-ES6Z9BbIVDELtbz+/b6pv41B2qOfp38cQpoCLqei21FtlkG/GzhyQ0M3egEIM+erpJOkpRKM8Tc8/YQtHdiTXA==}
 
   jest-util@30.4.1:
     resolution: {integrity: sha512-vjQb1sACEiv13DKJMDToJpzVW0joCsIQrmbg0fi7CyOOt+g9jTuQl2A216pWRBYhOVt53XbL/2LbMKg1BECWOw==}
@@ -4727,6 +4740,8 @@ snapshots:
       ansi-colors: 4.1.3
       strip-ansi: 6.0.1
 
+  entities@4.3.0: {}
+
   env-paths@2.2.1: {}
 
   error-ex@1.3.4:
@@ -5361,6 +5376,11 @@ snapshots:
       synckit: 0.11.13
     transitivePeerDependencies:
       - supports-color
+
+  jest-sonar@0.2.16:
+    dependencies:
+      entities: 4.3.0
+      strip-ansi: 6.0.1
 
   jest-util@30.4.1:
     dependencies:
