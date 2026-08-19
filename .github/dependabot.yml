@@ -17,6 +17,7 @@ updates:
       npm-security:
         applies-to: security-updates
         patterns: ["*"]
+    cooldown: 7
 
   - package-ecosystem: "github-actions"
     directory: "/"
