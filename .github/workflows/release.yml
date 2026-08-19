@@ -7,7 +7,6 @@ on:
 
 env:
   FORCE_COLOR: "1"
-  NPM_REGISTRY: ${{ vars.NPM_REGISTRY }}
 
 permissions:
   id-token: write
@@ -19,6 +18,7 @@ jobs:
     name: Build and Publish Release
     # JFrog is accessible only from a Ledger private runner
     runs-on: ${{ vars.RELEASE_RUNNER || 'public-ledgerhq-shared-medium' }}
+    environment: release
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -26,24 +26,19 @@ jobs:
 
       - uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
 
+      - uses: LedgerHQ/ts-libs/.github/actions/jfrog-npm-auth@develop
+        with:
+          registry: ${{ vars.ARTIFACTORY_URL }}
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build libraries
         run: pnpm build
 
-      - name: Login to JFrog (OIDC)
-        id: jfrog-login
-        uses: LedgerHQ/actions-security/actions/jfrog-login@3868be0ef1ec8722fbdb2c6cda90f739cbfc742d # actions/jfrog-login-1
-
-      - name: Configure npm registry
-        env:
-          NPM_REGISTRY_TOKEN: ${{ steps.jfrog-login.outputs.oidc-token }}
-        run: |
-          cat << EOF >> .npmrc
-          registry=https://${NPM_REGISTRY}/
-          //${NPM_REGISTRY}/:_authToken=${NPM_REGISTRY_TOKEN}
-          EOF
+      - uses: LedgerHQ/ts-libs/.github/actions/jfrog-npm-auth@develop
+        with:
+          registry: ${{ vars.ARTIFACTORY_PUBLISH_URL }}
 
       - name: Publish packages
         run: pnpm exec changeset publish
