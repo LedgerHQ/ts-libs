@@ -9,9 +9,7 @@ env:
   FORCE_COLOR: "1"
 
 permissions:
-  id-token: write
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   release:
@@ -19,11 +17,46 @@ jobs:
     # JFrog is accessible only from a Ledger private runner
     runs-on: ${{ vars.RELEASE_RUNNER || 'public-ledgerhq-shared-medium' }}
     environment: release
+    permissions:
+      contents: write # git tags and GitHub releases
+      id-token: write # JFrog OIDC login and attestation
+      attestations: write # SLSA provenance
     steps:
+      # Tags and releases are pushed through the API by changesets/action. An app
+      # token is used rather than GITHUB_TOKEN so those writes are attributed to the
+      # release bot and can trigger downstream automation.
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.GH_BOT_APP_ID }}
+          private-key: ${{ secrets.GH_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      # changesets/action enters version mode whenever changesets are present, even
+      # with a publish-script set. On main that would open a spurious
+      # `changeset-release/main` pull request instead of publishing. Unconsumed
+      # changesets here mean develop reached main before its version PR was merged.
+      - name: Guard against unconsumed changesets
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          pending=()
+          for f in .changeset/*.md; do
+            [ "$(basename "$f")" = "README.md" ] && continue
+            pending+=("$f")
+          done
+          shopt -u nullglob
+          if [ "${#pending[@]}" -gt 0 ]; then
+            echo "::error::main has ${#pending[@]} unconsumed changeset(s): ${pending[*]}. Merge the 'chore(release): version packages' pull request on develop first, then merge develop into main."
+            exit 1
+          fi
+          echo "No unconsumed changesets - safe to publish."
 
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
 
@@ -34,14 +67,72 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Must precede packing: the tarballs include lib/ and lib-es/.
       - name: Build libraries
         run: pnpm build
+
+      # jfrog-npm-auth skips silently when registry is empty, which would leave npm
+      # pointed at the read registry configured above and publish the release there.
+      - name: Require a publish registry
+        env:
+          PUBLISH_REGISTRY: ${{ vars.ARTIFACTORY_PUBLISH_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PUBLISH_REGISTRY" ]; then
+            echo "::error::ARTIFACTORY_PUBLISH_URL is not set on the 'release' environment. Refusing to publish while npm still points at the read registry."
+            exit 1
+          fi
 
       - uses: LedgerHQ/ts-libs/.github/actions/jfrog-npm-auth@develop
         with:
           registry: ${{ vars.ARTIFACTORY_PUBLISH_URL }}
 
-      - name: Publish packages
-        run: pnpm exec changeset publish
+      # `changeset pack` derives its work from the publish plan, so packages already
+      # present in the registry are skipped and nothing is packed for them. It writes
+      # publish-plan.json even when the plan is empty, keeping a re-run idempotent.
+      - name: Pack publishable packages
+        id: pack
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUT_DIR: ${{ runner.temp }}/changesets-pack
+        run: |
+          set -euo pipefail
+          pnpm exec changeset pack --out-dir "$OUT_DIR"
+
+          shopt -s nullglob
+          tarballs=("$OUT_DIR"/packages/*.tgz)
+          shopt -u nullglob
+
+          {
+            echo "out-dir=$OUT_DIR"
+            echo "count=${#tarballs[@]}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Packed ${#tarballs[@]} tarball(s) into $OUT_DIR"
+
+      # subject-path is the `packages` subdirectory, not out-dir: the action enumerates
+      # tarballs with `find -maxdepth 1 -name '*.tgz'` and does not descend. Every
+      # tarball found goes into one multi-subject SLSA layout.
+      #
+      # Skipped when nothing was packed - the action exits 1 on an empty subject-path,
+      # which would break an idempotent re-run.
+      #
+      # TODO: repin to a tag once attest-npm-dir-support is merged; a branch ref is
+      # mutable. zizmor permits it under the `LedgerHQ/*: ref-pin` policy.
+      - name: Attest tarballs
+        if: steps.pack.outputs.count != '0'
+        uses: LedgerHQ/actions-security/actions/attest-for-npmsjs-com@attest-npm-dir-support
+        with:
+          subject-path: ${{ steps.pack.outputs.out-dir }}/packages
+
+      # Publishes the exact tarballs that were attested, then pushes git tags and
+      # creates GitHub releases through the API (signed by GitHub, since
+      # push-with-git-cli defaults to false).
+      #
+      # The guard above ensures no changesets remain, so the action goes straight to
+      # publish mode and creates no commits. Do not add a GITHUB_TOKEN env var - the
+      # action throws if it is set and differs from `github-token`.
+      - name: Publish, tag and release
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          publish-script: pnpm exec changeset publish --from-pack-dir "${{ steps.pack.outputs.out-dir }}"

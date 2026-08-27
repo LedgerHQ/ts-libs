@@ -12,6 +12,11 @@ hooks {
   ["pre-commit"] {
     steps {
       ["oxfmt"] {
+        // Restricted to what oxfmt actually formats. .oxfmtrc.json ignores
+        // **/*.md, **/*.json and .github/**, and oxfmt exits non-zero with
+        // "Expected at least one target file" when handed only ignored paths,
+        // which would fail the hook on any docs- or workflow-only commit.
+        glob = List("**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts", "**/*.js", "**/*.jsx", "**/*.mjs", "**/*.cjs")
         check = "pnpm exec oxfmt --check {{ files }}"
         fix = "pnpm exec oxfmt {{ files }}"
       }
