@@ -11,7 +11,7 @@ catalog:
   "@commitlint/config-conventional": "21.2.0"
   jest-sonar: "0.2.16"
   typescript: "7.0.2"
-  "@types/node": "26.1.2"
+  "@types/node": "26.4.0"
   "@types/jest": "30.0.0"
   jest: "30.4.2"
   "@swc/jest": "0.2.39"
