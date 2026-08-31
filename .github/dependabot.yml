@@ -9,7 +9,14 @@ updates:
       day: "monday"
       timezone: "Europe/Paris"
     labels: ["dependencies"]
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    groups:
+      npm:
+        applies-to: version-updates
+        patterns: ["*"]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -19,3 +26,10 @@ updates:
       day: "monday"
       timezone: "Europe/Paris"
     labels: ["dependencies", "github_actions"]
+    groups:
+      github-actions:
+        applies-to: version-updates
+        patterns: ["*"]
+      github-actions-security:
+        applies-to: security-updates
+        patterns: ["*"]

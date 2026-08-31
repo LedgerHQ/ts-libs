@@ -18,8 +18,8 @@
     "@changesets/cli": "^2.31.1",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
-    "knip": "6.32.2",
-    "nx": "^23.1.1",
+    "knip": "6.32.3",
+    "nx": "^23.1.2",
     "oxlint": "catalog:",
     "oxfmt": "catalog:",
     "typescript": "catalog:"
