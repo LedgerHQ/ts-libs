@@ -18,6 +18,9 @@ permissions:
 
 jobs:
   sonar:
+    permissions:
+      id-token: write
+      contents: read
     name: Scan
     runs-on: public-ledgerhq-shared-medium
     steps:

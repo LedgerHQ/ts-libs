@@ -105,6 +105,9 @@ Merge those two in that order. Merging `develop` into `main` while the version p
 
 To cut a release, merge the version pull request and then promote. To hold one back, leave the version pull request open — it keeps updating itself as more changesets land.
 
+> [!NOTE]
+> For the machinery behind this — what each workflow does, which registries and credentials it uses, and what to do when a release fails — see [docs/RELEASE.md](docs/RELEASE.md).
+
 ## Migrating a Library from ledger-live
 
 Use the `/import-lib-from-live` skill. It handles discovery, dependency audit, file copy, config patching, and build verification. Once imported, set the library status in its README (see below).

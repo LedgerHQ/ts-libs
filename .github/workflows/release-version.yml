@@ -18,8 +18,20 @@ permissions:
 jobs:
   version:
     name: Maintain version pull request
+    # Merging `changeset-release/develop` back into develop consumes every changeset,
+    # so the push it triggers has nothing left to version. Keyed on the commit message
+    # rather than the actor: a merge commit is attributed to whoever clicked merge, not
+    # to the bot. Covers all three merge strategies - "Merge pull request #N from
+    # LedgerHQ/changeset-release/develop" (merge), and the versioning commit itself
+    # under squash ("chore(release): version packages (#N)") and rebase.
+    #
+    # A `[skip ci]` marker in the changesets commit message would be simpler but also
+    # skips `pull_request` runs, so the version PR would never get the `CI` check that
+    # develop's ruleset requires.
+    if: >-
+      !startsWith(github.event.head_commit.message, 'chore(release): version packages')
+      && !contains(github.event.head_commit.message, 'changeset-release/')
     runs-on: public-ledgerhq-shared-medium
-    environment: release
     permissions:
       contents: write
       pull-requests: write
