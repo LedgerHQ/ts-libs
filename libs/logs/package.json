@@ -1,6 +1,6 @@
 {
   "name": "@ledgerhq/logs",
-  "version": "6.18.0",
+  "version": "6.19.0",
   "description": "Ledger logs central point",
   "keywords": [
     "Ledger"
@@ -10,6 +10,12 @@
     "url": "https://github.com/LedgerHQ/ts-libs/issues"
   },
   "license": "Apache-2.0",
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/LedgerHQ/ts-libs.git"
