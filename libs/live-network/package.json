@@ -1,0 +1,114 @@
+{
+  "name": "@ledgerhq/live-network",
+  "version": "3.0.0",
+  "description": "Ledger Live network and cache utilities",
+  "keywords": [
+    "Ledger"
+  ],
+  "homepage": "https://github.com/LedgerHQ/ts-libs/tree/main/libs/live-network",
+  "bugs": {
+    "url": "https://github.com/LedgerHQ/ts-libs/issues"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedgerHQ/ts-libs.git"
+  },
+  "main": "lib/index.js",
+  "module": "lib-es/index.js",
+  "types": "lib/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "network": [
+        "lib/network.d.ts"
+      ],
+      "cache": [
+        "lib/cache.d.ts"
+      ],
+      "errors": [
+        "lib/errors.d.ts"
+      ],
+      "batcher": [
+        "lib/batcher/index.d.ts"
+      ],
+      "batcher/types": [
+        "lib/batcher/types.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./network": {
+      "@ledgerhq/source": "./src/network.ts",
+      "import": "./lib-es/network.js",
+      "require": "./lib/network.js",
+      "default": "./lib/network.js"
+    },
+    "./cache": {
+      "@ledgerhq/source": "./src/cache.ts",
+      "import": "./lib-es/cache.js",
+      "require": "./lib/cache.js",
+      "default": "./lib/cache.js"
+    },
+    "./errors": {
+      "@ledgerhq/source": "./src/errors.ts",
+      "import": "./lib-es/errors.js",
+      "require": "./lib/errors.js",
+      "default": "./lib/errors.js"
+    },
+    "./batcher": {
+      "@ledgerhq/source": "./src/batcher/index.ts",
+      "import": "./lib-es/batcher/index.js",
+      "require": "./lib/batcher/index.js",
+      "default": "./lib/batcher/index.js"
+    },
+    "./batcher/types": {
+      "@ledgerhq/source": "./src/batcher/types.ts",
+      "import": "./lib-es/batcher/types.js",
+      "require": "./lib/batcher/types.js",
+      "default": "./lib/batcher/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf lib lib-es",
+    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
+    "lint": "oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "@ledgerhq/live-promise": "workspace:*",
+    "@ledgerhq/logs": "workspace:*",
+    "lru-cache": "^7.14.1"
+  },
+  "peerDependencies": {
+    "axios": "catalog:"
+  },
+  "devDependencies": {
+    "@swc/core": "catalog:",
+    "@swc/jest": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "axios": "catalog:",
+    "jest": "catalog:",
+    "jest-sonar": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}
