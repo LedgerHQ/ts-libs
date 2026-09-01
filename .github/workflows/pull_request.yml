@@ -46,6 +46,12 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Packs every library and asserts the tarball contains what package.json declares.
+      # The root .gitignore hides lib/ and lib-es/ from `pnpm pack`, so a package without
+      # a `files` allowlist silently declares an entry point that it does not ship.
+      - name: Verify packaging
+        run: pnpm verify-pack
+
       - name: Lint
         run: pnpm lint
 

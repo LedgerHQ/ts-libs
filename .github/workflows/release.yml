@@ -71,6 +71,11 @@ jobs:
       - name: Build libraries
         run: pnpm build
 
+      # Fails the release before anything is published if a package declares an entry
+      # point that its tarball does not contain.
+      - name: Verify packaging
+        run: pnpm verify-pack
+
       # jfrog-npm-auth skips silently when registry is empty, which would leave npm
       # pointed at the read registry configured above and publish the release there.
       - name: Require a publish registry

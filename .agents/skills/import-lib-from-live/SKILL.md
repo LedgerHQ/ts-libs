@@ -148,6 +148,18 @@ Replace any `"rimraf"` clean scripts with `"rm -rf lib lib-es"`.
 
 Replace any `workspace:*` runtime deps with their pinned npm version (look up current published version).
 
+**Add a `files` allowlist — this is mandatory, not optional:**
+
+```json
+{
+  "files": ["lib", "lib-es", "src", "CHANGELOG.md"]
+}
+```
+
+The root `.gitignore` lists `lib/` and `lib-es/`. Without a `files` field `pnpm pack` falls back to those rules and drops `lib-es/` from the tarball, while force-keeping `lib/` because `main` and `types` point into it. The package then publishes with a `module` field and an `import` condition aimed at a directory that is not in the tarball — every ESM and bundler consumer breaks on upgrade with `ERR_MODULE_NOT_FOUND`, and CommonJS consumers notice nothing, so it survives smoke tests. This is exactly how `@ledgerhq/logs@6.18.0` shipped broken. Note `npm pack` does *not* reproduce it — only `pnpm pack`, which is what the release uses.
+
+Keep `src` in the list: the `@ledgerhq/source` export condition resolves into it.
+
 Remove wildcard sub-path exports from the `exports` field — keep only the `"."` root and `"./package.json"` entries:
 
 ```json
@@ -234,7 +246,10 @@ In `package.json`, ensure the `scripts` block has all four targets nx expects:
 mise exec -- pnpm install
 mise exec -- pnpm --filter @ledgerhq/<name> build
 mise exec -- pnpm --filter @ledgerhq/<name> typecheck
+mise exec -- pnpm build && mise exec -- pnpm verify-pack
 ```
+
+`verify-pack` packs every library and asserts the tarball actually contains each path declared by `main`, `module`, `types`, `bin` and every `exports` condition. It must pass before the import is considered done — a build that succeeds says nothing about what gets published. It checks every lib, so run the full `pnpm build` first: an unbuilt sibling reports a missing `lib/index.js`.
 
 If pnpm install fails with `ERR_PNPM_IGNORED_BUILDS`, set the new package's build scripts to `true` in `pnpm-workspace.yaml`'s `allowBuilds` section, then re-run.
 
@@ -244,7 +259,7 @@ Fix any other errors that arise (usually tsconfig path issues or missing deps).
 
 After a successful build, report:
 
-- ✅ Library imported and builds cleanly
+- ✅ Library imported, builds cleanly and passes `verify-pack`
 - ⚠️ Any pending changesets found (list them)
 - ⚠️ Any open PRs that need redirecting (list them with URLs)
 - 📋 Next steps: update ledger-live to drop workspace ref and bump to the version published from ts-libs
