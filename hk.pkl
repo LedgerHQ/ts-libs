@@ -1,4 +1,5 @@
 amends "package://github.com/jdx/hk/releases/download/v1.40.0/hk@1.40.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.40.0/hk@1.40.0#/Builtins.pkl"
 
 hooks {
   ["commit-msg"] {
@@ -11,13 +12,21 @@ hooks {
   ["pre-commit"] {
     steps {
       ["oxfmt"] {
-        glob = List("*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs")
-        stage = List("*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs")
+        // Restricted to what oxfmt actually formats. .oxfmtrc.json ignores
+        // **/*.md, **/*.json and .github/**, and oxfmt exits non-zero with
+        // "Expected at least one target file" when handed only ignored paths,
+        // which would fail the hook on any docs- or workflow-only commit.
+        glob = List("**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts", "**/*.js", "**/*.jsx", "**/*.mjs", "**/*.cjs")
         check = "pnpm exec oxfmt --check {{ files }}"
         fix = "pnpm exec oxfmt {{ files }}"
       }
       ["gitleaks"] {
         check = "gitleaks git --pre-commit --staged --redact --no-banner --verbose --config .gitleaks.toml"
+      }
+      ["actionlint"] = Builtins.actionlint
+      ["zizmor"] = (Builtins.zizmor) {
+          glob = List(".github/workflows/*.yml", "tools/actions/**/*.yml")
+          check = "zizmor --no-progress {{ files }} --min-severity=medium"
       }
     }
   }

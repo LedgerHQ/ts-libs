@@ -56,4 +56,16 @@ Description covering both changes.
 
 ## File Naming
 
-Use a random human-readable slug matching `@changesets/cli` convention (e.g. `happy-cats-fly.md`, `silver-dogs-run.md`). Run `pnpm changelog` to generate interactively, or create the file manually.
+Prefer letting the CLI name and write the file — on Changesets v3 this is fully non-interactive:
+
+```bash
+pnpm changeset add --minor @ledgerhq/logs -m "Add LocalTracer.withUpdatedContext"
+```
+
+`--major`, `--minor` and `--patch` each accept comma-separated package names, so a multi-package changeset is one command:
+
+```bash
+pnpm changeset add --minor @ledgerhq/logs --patch @ledgerhq/errors -m "Description covering both changes."
+```
+
+If writing the file by hand instead, use a random human-readable slug matching the `@changesets/cli` convention (e.g. `happy-cats-fly.md`, `silver-dogs-run.md`).

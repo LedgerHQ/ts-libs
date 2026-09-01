@@ -4,6 +4,6 @@
   "trailingComma": "all",
   "arrowParens": "avoid",
   "sortPackageJson": false,
-  "ignorePatterns": ["**/*.md", "**/*.json"],
+  "ignorePatterns": ["**/*.md", "**/*.json", ".github/**"],
   "overrides": []
 }
