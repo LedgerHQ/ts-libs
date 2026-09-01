@@ -29,4 +29,6 @@ pnpm test
 
 ## Release
 
-Merge `develop` into `main` to trigger an automatic release.
+Releases are automated with [changesets](https://github.com/changesets/changesets). Merge the `chore(release): version packages` pull request on `develop`, then merge `develop` into `main` to publish.
+
+See [docs/RELEASE.md](docs/RELEASE.md) for the full process.

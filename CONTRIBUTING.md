@@ -74,6 +74,40 @@ pnpm changelog
 
 A changeset is **required** for any change to a library's public API or behaviour. It is not required for tooling, CI, or documentation-only changes.
 
+> [!NOTE]
+> On Changesets v3 there is no longer a confirmation prompt at the end of `changeset add` — the file is written immediately. To change your mind, edit or delete the generated `.changeset/*.md` file.
+
+You can also skip the prompts entirely:
+
+```bash
+pnpm changeset add --minor @ledgerhq/logs -m "Add LocalTracer.withUpdatedContext"
+```
+
+`--major`, `--minor` and `--patch` accept comma-separated package names.
+
+## Releases
+
+Releases are automated. You do not run `changeset version` or `changeset publish` by hand.
+
+```mermaid
+flowchart LR
+    S0[Merge PR<br>with a changeset] --> S1[Bot opens<br>version pull request]
+    S1 --> S2[Approve &amp; merge<br>version pull request]
+    S2 --> S3[Open &amp; merge<br>develop into main]
+    S3 --> S4[Published to JFrog<br>+ tag + GitHub release]
+```
+
+1. Merging any PR carrying a changeset into `develop` makes the release bot open or update a **`chore(release): version packages`** pull request on the `changeset-release/develop` branch. It applies every pending changeset — bumping versions and writing `CHANGELOG.md` entries.
+2. That PR is the release gate. Review the versions and changelogs, then approve and merge it like any other PR.
+3. Open a pull request from `develop` into `main` and merge it. That push to `main` publishes the packages to JFrog, pushes git tags and creates GitHub releases.
+
+Merge those two in that order. Merging `develop` into `main` while the version pull request is still open fails the release with an "unconsumed changesets" error rather than publishing unversioned packages.
+
+To cut a release, merge the version pull request and then promote. To hold one back, leave the version pull request open — it keeps updating itself as more changesets land.
+
+> [!NOTE]
+> For the machinery behind this — what each workflow does, which registries and credentials it uses, and what to do when a release fails — see [docs/RELEASE.md](docs/RELEASE.md).
+
 ## Migrating a Library from ledger-live
 
 Use the `/import-lib-from-live` skill. It handles discovery, dependency audit, file copy, config patching, and build verification. Once imported, set the library status in its README (see below).
