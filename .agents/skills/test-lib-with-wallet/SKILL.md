@@ -11,15 +11,14 @@ them into a real ledger-live checkout, run the wallet's own builds.** Nothing is
 everything is reverted.
 
 Mirror of `/import-lib-from-live` — that one moves code out, this one proves the move
-survives the consumer. Works for a package *replacement* too (we validated `@ledgerhq/auth`
-against `@ledgerhq/ledger-auth`).
+survives the consumer. Works the same for a package *replacement*.
 
 ## Usage
 
 ```
-/test-lib-with-wallet                       # everything on the release branch
-/test-lib-with-wallet live-network devices  # only these
-/test-lib-with-wallet --pr 43               # include an open PR branch
+/test-lib-with-wallet                # everything on the release branch
+/test-lib-with-wallet <lib> <lib>    # only these
+/test-lib-with-wallet --pr <n>       # include an open PR branch
 ```
 
 ## Steps
@@ -47,7 +46,7 @@ and knows nothing about consumers, which is step 3's job.
 ### 2. Parity diff
 
 **Matching versions prove nothing** — a release cut from a release branch can post-date a
-ledger-live commit and still predate its content.
+ledger-live commit and still predate its content, so a "newer" package can carry older code.
 
 ```bash
 mkdir -p $PACKS/x && tar xzf $PACKS/ledgerhq-<name>-<v>.tgz -C $PACKS/x --strip-components=1 package/src
@@ -57,14 +56,10 @@ diff -r -x '*.test.ts' $PACKS/x/src $LIVE/<path-to-lib>/src
 Name every remaining diff. Diff the manifests too: `dependencies`, `peerDependencies`,
 `main`/`module`/`types`.
 
-> `hw-transport@6.35.7` shipped 4 days *after* ledger-live inlined its error classes and
-> still required `@ledgerhq/errors`, splitting `TransportError` identity. Invisible to
-> version comparison.
-
-For a **replacement**, also diff the two packages' sources and check every name the wallet
-imports is exported. Watch shared-dep drift between the two catalogs: ts-libs pins
-`zod@4.4.3` vs ledger-live's `4.3.6`, adding a third zod copy — harmless for `.parse()`,
-dangerous once schemas are composed across instances.
+For a **replacement** package, also diff the two packages' sources and check every name the
+wallet imports is exported. Watch shared deps pinned differently in the two catalogs: the
+skew adds another copy of that dep — harmless for stateless calls, not for values compared
+or composed across instances.
 
 ### 3. Subpath audit
 
@@ -81,10 +76,10 @@ grep -rhoE "@ledgerhq/<name>/[a-zA-Z0-9_./-]+" \
   $LIVE/node_modules/.pnpm/*/node_modules/@ledgerhq/*/lib*/ | sort -u
 ```
 
-> (a) `./index` is a legal subpath of `./*` and nobody enumerates it — 6 sites imported
-> `@ledgerhq/devices/index`.
-> (b) losing `./batcher/index`, `./lib/cache` and `./lib-es/cache` broke published
-> `coin-evm`, `coin-tezos`, `coin-xrp`, `ledger-cal-service`. `tsc` was happy; rspack was not.
+Enumerate everything the old wildcards matched, including the non-obvious: `./index`, and
+the `./lib/*` / `./lib-es/*` paths that published `.d.ts` files reference. `tsc` and unit
+tests resolve through `@ledgerhq/source` to `src/`, so a missing subpath surfaces only when
+a bundler resolves the published package.
 
 ### 4. Peer audit
 
@@ -101,13 +96,12 @@ done
 ```
 
 Symptoms are indirect: a type widening to `any`, or `Cannot find module` from a bundler
-**or from jest**. `live-network`'s `axios` peer was unsatisfied for published
-`coin-module-framework`, `coin-tezos` and `ledger-cal-service`.
+**or from jest**.
 
 **Nuke `node_modules` first (step 5) — a stale instance raises the same
 `Cannot find module` as a real gap.** If the gap survives a clean tree, one
 `packageExtensions` entry **per published consumer** is the only recourse, and it is
-mandatory, not cosmetic. Two traps:
+mandatory, not cosmetic — confirm by A/B on a clean tree. Two traps:
 
 - On **the lib itself it does nothing, silently**: pnpm keeps the existing
   `peerDependencies` entry and discards the `dependencies` you added. Only the consumer
@@ -115,10 +109,6 @@ mandatory, not cosmetic. Two traps:
 - The consumer side rejects `catalog:` (`ERR_PNPM_SPEC_NOT_SUPPORTED_BY_ANY_RESOLVER`) — an
   external package cannot read the workspace catalog. So the version is hand-pinned: the
   one place in the PR diff that cannot use `catalog:` and will silently drift from it.
-
-> A/B on a clean tree (`node_modules` deleted between runs): **without** the three `axios`
-> entries, two live-network instances, one lacking `axios`, and
-> `coin-modules-monitoring:build` fails; **with** them, one instance and a green build.
 
 The cost is linear in the number of published modules consuming the lib — which is what
 justifies **escalating instead of patching**: is the peer still worth it, or should those
@@ -134,17 +124,19 @@ published versions go in the catalog (that is the diff the real PR carries).
 ```
 
 `overrides` intercepts every instance, including transitive ones from published
-`@ledgerhq/coin-*`. The path cannot go in the catalog — `file:` there fails with
+`@ledgerhq/*`. The path cannot go in the catalog — `file:` there fails with
 `ERR_PNPM_CATALOG_ENTRY_INVALID_SPEC`. A `catalog:` ref *inside* `overrides` is fine.
 
-> ledger-live pins pnpm 10, which reads `pnpm.overrides`. **pnpm 11 ignores the whole
-> `pnpm` field with only a warning**, so the install silently resolves the *published*
-> versions and every check below passes for the wrong reason. On pnpm 11 the overrides
-> belong in `pnpm-workspace.yaml`.
+> **Check pnpm's major version.** pnpm 10 reads `pnpm.overrides` from `package.json`;
+> pnpm 11 ignores that whole field with only a warning, so the install silently resolves
+> the *published* versions and every check below passes for the wrong reason. On pnpm 11
+> the overrides belong in `pnpm-workspace.yaml`.
 
 **Delete `node_modules` between repack cycles.** Neither `pnpm install` nor `--force`
-purges stale `.pnpm/` instances or the dead peer symlinks inside them, and every
-`pnpm pack` mints a new `file:` hash, hence a new instance.
+purges stale `.pnpm/` instances or the dead peer symlinks inside them, and every `pnpm pack`
+mints a new `file:` hash, hence a new instance. Real packages keep linking the stale one, so
+a bundler walks a path the lockfile says does not exist and fails on a dependency that is
+genuinely present — a phantom failure.
 
 ```bash
 cd $LIVE && find . -type d -name node_modules -prune -exec rm -r {} +
@@ -155,14 +147,8 @@ grep -c "@ledgerhq/<name>@<old-version>" pnpm-lock.yaml   # must be 0
 ```
 
 Match the version **without** a closing quote: pnpm appends peer suffixes to keys
-(`'@ledgerhq/live-network@2.4.3(axios@1.13.5)'`) and the same string appears inside other
-packages' keys, so an exact `'…@<v>'` reports 0 for a graph that still resolves the old one.
-
-> After a repack, `coin-module-framework@8.2.0`'s live-network symlink still pointed at the
-> previous, axios-less instance — though that snapshot in the lockfile declares no
-> live-network at all. Nine packages link the bare instance, so rspack walked a path the
-> lockfile says does not exist: a phantom `Cannot find module 'axios'`. Nuke + reinstall
-> left one instance, and the build passed.
+(`'@ledgerhq/<name>@<v>(<peer>@<v>)'`) and the same string appears inside other packages'
+keys, so an exact `'…@<v>'` reports 0 for a graph that still resolves the old one.
 
 **The lockfile diagnoses, a clean tree convicts.** If no snapshot depends on the offending
 instance, you are looking at residue. Never report an incompatibility from a dirty tree.
@@ -178,9 +164,8 @@ CI=true mise exec -- pnpm typecheck
 Run the **builds**, not just `typecheck` — rspack/metro are what catch a broken `exports`
 map, an unresolvable peer, or an ESM/CJS mismatch.
 
-Compute the test targets instead of guessing them: every manifest that depends on a packed
-lib *and* has a `test` script (80 projects on our run), then
-`nx run-many -t test -p <list> --parallel=6`.
+Compute the test targets instead of guessing: every manifest that depends on a packed lib
+*and* has a `test` script, then `nx run-many -t test -p <list> --parallel=6`.
 
 ```bash
 cd $LIVE && mise exec -- node -e '
@@ -197,12 +182,10 @@ console.log([...out].join(","));
 ```
 
 **A failing task is not evidence.** App integration suites time out
-(`Exceeded timeout of 5000 ms`) under heavy `--parallel` — seen on Contacts, Send,
-NotificationsPrompt and GenericAwarenessModal, on both LLD and LLM. Check the suite even
-references a migrated lib (`grep -c "@ledgerhq/<name>" <suite>` → `0` means suspect), then
-re-run it alone at low parallelism. Unrelated pre-existing failures to recognise rather
-than investigate: `dummy-wallet-app:lint` (oxlint `unicorn/consistent-function-scoping`)
-and `live-engagement:knip-check` (Re.Pack absent locally).
+(`Exceeded timeout of 5000 ms`) under heavy `--parallel`, and the monorepo carries failures
+unrelated to your change. Before calling anything a regression: check the suite even
+references a packed lib (`grep -c "@ledgerhq/<name>" <suite>` → `0` means suspect), then
+re-run it alone at low parallelism.
 
 ### 7. Report and revert
 
