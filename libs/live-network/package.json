@@ -39,6 +39,15 @@
       ],
       "batcher/types": [
         "lib/batcher/types.d.ts"
+      ],
+      "batcher/index": [
+        "lib/batcher/index.d.ts"
+      ],
+      "lib/*": [
+        "lib/*"
+      ],
+      "lib-es/*": [
+        "lib-es/*"
       ]
     }
   },
@@ -79,6 +88,14 @@
       "require": "./lib/batcher/types.js",
       "default": "./lib/batcher/types.js"
     },
+    "./batcher/index": {
+      "@ledgerhq/source": "./src/batcher/index.ts",
+      "import": "./lib-es/batcher/index.js",
+      "require": "./lib/batcher/index.js",
+      "default": "./lib/batcher/index.js"
+    },
+    "./lib/*": "./lib/*.js",
+    "./lib-es/*": "./lib-es/*.js",
     "./package.json": "./package.json"
   },
   "publishConfig": {
