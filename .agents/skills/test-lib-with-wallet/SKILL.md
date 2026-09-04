@@ -105,17 +105,24 @@ Symptoms are indirect: a type widening to `any`, or `Cannot find module` from a 
 `coin-module-framework`, `coin-tezos` and `ledger-cal-service`.
 
 **Nuke `node_modules` first (step 5) — a stale instance raises the same
-`Cannot find module` as a real gap.** If the gap survives a clean tree:
+`Cannot find module` as a real gap.** If the gap survives a clean tree, one
+`packageExtensions` entry **per published consumer** is the only recourse, and it is
+mandatory, not cosmetic. Two traps:
 
-- `packageExtensions` on **the lib itself does nothing, silently**: pnpm keeps the existing
+- On **the lib itself it does nothing, silently**: pnpm keeps the existing
   `peerDependencies` entry and discards the `dependencies` you added. Only the consumer
   side works.
-- The consumer side works but rejects `catalog:`
-  (`ERR_PNPM_SPEC_NOT_SUPPORTED_BY_ANY_RESOLVER`) — an external package cannot read the
-  workspace catalog, so the version must be hand-pinned.
+- The consumer side rejects `catalog:` (`ERR_PNPM_SPEC_NOT_SUPPORTED_BY_ANY_RESOLVER`) — an
+  external package cannot read the workspace catalog. So the version is hand-pinned: the
+  one place in the PR diff that cannot use `catalog:` and will silently drift from it.
 
-Hand-pinning one entry per published consumer is the signal to **escalate, not patch**: is
-the peer still worth its cost, or should those modules be republished declaring it?
+> A/B on a clean tree (`node_modules` deleted between runs): **without** the three `axios`
+> entries, two live-network instances, one lacking `axios`, and
+> `coin-modules-monitoring:build` fails; **with** them, one instance and a green build.
+
+The cost is linear in the number of published modules consuming the lib — which is what
+justifies **escalating instead of patching**: is the peer still worth it, or should those
+modules be republished declaring it?
 
 ### 5. Wire in and install
 
