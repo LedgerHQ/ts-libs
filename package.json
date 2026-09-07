@@ -15,12 +15,12 @@
     "release": "changeset publish"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^1.0.0",
-    "@changesets/cli": "^3.0.1",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.2",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
-    "knip": "6.32.3",
-    "nx": "^23.1.2",
+    "knip": "6.34.0",
+    "nx": "^23.2.0",
     "oxlint": "catalog:",
     "oxfmt": "catalog:",
     "typescript": "catalog:"
