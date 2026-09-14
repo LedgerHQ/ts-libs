@@ -48,16 +48,16 @@
     "coverage": "jest --coverage"
   },
   "dependencies": {
-    "bitcoinjs-lib": "^6.1.7",
-    "varuint-bitcoin": "1.1.2"
+    "bitcoinjs-lib": "^7.0.2",
+    "varuint-bitcoin": "2.0.1"
   },
   "devDependencies": {
-    "@bitcoinerlab/secp256k1": "1.2.0",
+    "@bitcoinerlab/secp256k1": "2.0.0",
     "@swc/core": "catalog:",
     "@swc/jest": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
-    "ecpair": "3.0.1",
+    "ecpair": "3.0.2",
     "jest": "catalog:",
     "jest-sonar": "catalog:",
     "oxlint": "catalog:",
