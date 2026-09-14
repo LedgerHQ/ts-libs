@@ -48,7 +48,7 @@
     "coverage": "jest --coverage"
   },
   "dependencies": {
-    "bitcoinjs-lib": "^6.1.7",
+    "bitcoinjs-lib": "^7.0.2",
     "varuint-bitcoin": "1.1.2"
   },
   "devDependencies": {
