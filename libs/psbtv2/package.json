@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "bitcoinjs-lib": "^6.1.7",
-    "varuint-bitcoin": "1.1.2"
+    "varuint-bitcoin": "2.0.1"
   },
   "devDependencies": {
     "@bitcoinerlab/secp256k1": "1.2.0",
