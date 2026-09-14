@@ -9,11 +9,29 @@ updates:
       day: "monday"
       timezone: "Europe/Paris"
     labels: ["dependencies"]
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 15
     groups:
-      npm:
+      # Only tooling is grouped. Everything else gets its own PR on purpose:
+      # a lib dependency bump must be reviewable (and revertable) in isolation.
+      tooling:
         applies-to: version-updates
-        patterns: ["*"]
+        patterns:
+          - "@changesets/*"
+          - "@commitlint/*"
+          - "@jest/*"
+          - "@nx/*"
+          - "@swc/*"
+          - "@types/*"
+          - "eslint*"
+          - "jest"
+          - "jest-*"
+          - "knip"
+          - "msw"
+          - "nx"
+          - "ox*"
+          - "prettier"
+          - "ts-jest"
+          - "typescript"
       npm-security:
         applies-to: security-updates
         patterns: ["*"]
