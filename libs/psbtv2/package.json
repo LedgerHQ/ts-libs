@@ -57,7 +57,7 @@
     "@swc/jest": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
-    "ecpair": "3.0.1",
+    "ecpair": "3.0.2",
     "jest": "catalog:",
     "jest-sonar": "catalog:",
     "oxlint": "catalog:",
