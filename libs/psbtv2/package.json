@@ -52,7 +52,7 @@
     "varuint-bitcoin": "1.1.2"
   },
   "devDependencies": {
-    "@bitcoinerlab/secp256k1": "1.2.0",
+    "@bitcoinerlab/secp256k1": "2.0.0",
     "@swc/core": "catalog:",
     "@swc/jest": "catalog:",
     "@types/jest": "catalog:",
