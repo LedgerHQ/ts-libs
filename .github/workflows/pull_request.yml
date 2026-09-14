@@ -74,11 +74,14 @@ jobs:
           printf '</testExecutions>\n' >> sonar-executionTests-report.xml
 
       - name: SonarQube Scan
+        # Dependabot runs read only the Dependabot secret store, so SONAR_TOKEN is empty there.
+        if: github.actor != 'dependabot[bot]'
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: SonarQube Quality Gate
+        if: github.actor != 'dependabot[bot]'
         uses: SonarSource/sonarqube-quality-gate-action@7a5fffe8e523c40e0c740b6bc2712ab503e52efa # v1.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
