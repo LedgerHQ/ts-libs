@@ -1,0 +1,124 @@
+{
+  "name": "@ledgerhq/evm-tools",
+  "version": "1.14.3",
+  "description": "EVM tooling used for coin integrations & app bindings",
+  "keywords": [
+    "Ledger",
+    "LedgerWallet",
+    "evm",
+    "Ethereum",
+    "Hardware Wallet"
+  ],
+  "homepage": "https://github.com/LedgerHQ/ts-libs/tree/main/libs/evm-tools",
+  "bugs": {
+    "url": "https://github.com/LedgerHQ/ts-libs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedgerHQ/ts-libs.git"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "main": "lib/index.js",
+  "module": "lib-es/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./index": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./message": {
+      "@ledgerhq/source": "./src/message/index.ts",
+      "import": "./lib-es/message/index.js",
+      "require": "./lib/message/index.js",
+      "default": "./lib/message/index.js"
+    },
+    "./message/index": {
+      "@ledgerhq/source": "./src/message/index.ts",
+      "import": "./lib-es/message/index.js",
+      "require": "./lib/message/index.js",
+      "default": "./lib/message/index.js"
+    },
+    "./message/EIP712": {
+      "@ledgerhq/source": "./src/message/EIP712/index.ts",
+      "import": "./lib-es/message/EIP712/index.js",
+      "require": "./lib/message/EIP712/index.js",
+      "default": "./lib/message/EIP712/index.js"
+    },
+    "./message/EIP712/index": {
+      "@ledgerhq/source": "./src/message/EIP712/index.ts",
+      "import": "./lib-es/message/EIP712/index.js",
+      "require": "./lib/message/EIP712/index.js",
+      "default": "./lib/message/EIP712/index.js"
+    },
+    "./message/EIP712/types": {
+      "@ledgerhq/source": "./src/message/EIP712/types.ts",
+      "import": "./lib-es/message/EIP712/types.js",
+      "require": "./lib/message/EIP712/types.js",
+      "default": "./lib/message/EIP712/types.js"
+    },
+    "./selectors": {
+      "@ledgerhq/source": "./src/selectors/index.ts",
+      "import": "./lib-es/selectors/index.js",
+      "require": "./lib/selectors/index.js",
+      "default": "./lib/selectors/index.js"
+    },
+    "./selectors/index": {
+      "@ledgerhq/source": "./src/selectors/index.ts",
+      "import": "./lib-es/selectors/index.js",
+      "require": "./lib/selectors/index.js",
+      "default": "./lib/selectors/index.js"
+    },
+    "./selectors/dappSelectors": {
+      "@ledgerhq/source": "./src/selectors/dappSelectors.ts",
+      "import": "./lib-es/selectors/dappSelectors.js",
+      "require": "./lib/selectors/dappSelectors.js",
+      "default": "./lib/selectors/dappSelectors.js"
+    },
+    "./lib/*": "./lib/*.js",
+    "./lib-es/*": "./lib-es/*.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf lib lib-es",
+    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
+    "lint": "oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "coverage": "jest --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "@ethersproject/constants": "^5.7.0",
+    "@ethersproject/hash": "^5.7.0",
+    "@ledgerhq/live-env": "workspace:*",
+    "axios": "catalog:",
+    "crypto-js": "4.2.0"
+  },
+  "devDependencies": {
+    "@swc/core": "catalog:",
+    "@swc/jest": "catalog:",
+    "@types/crypto-js": "^4.1.1",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "jest": "catalog:",
+    "jest-sonar": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

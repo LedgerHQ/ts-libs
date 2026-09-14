@@ -1,0 +1,179 @@
+{
+  "name": "@ledgerhq/domain-service",
+  "description": "Ledger service responsible for domain handling",
+  "version": "1.8.18",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/LedgerHQ/ts-libs/tree/main/libs/domain-service",
+  "bugs": {
+    "url": "https://github.com/LedgerHQ/ts-libs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedgerHQ/ts-libs.git"
+  },
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "main": "lib/index.js",
+  "module": "lib-es/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./index": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./errors": {
+      "@ledgerhq/source": "./src/errors/index.ts",
+      "import": "./lib-es/errors/index.js",
+      "require": "./lib/errors/index.js",
+      "default": "./lib/errors/index.js"
+    },
+    "./errors/index": {
+      "@ledgerhq/source": "./src/errors/index.ts",
+      "import": "./lib-es/errors/index.js",
+      "require": "./lib/errors/index.js",
+      "default": "./lib/errors/index.js"
+    },
+    "./hooks": {
+      "@ledgerhq/source": "./src/hooks/index.tsx",
+      "import": "./lib-es/hooks/index.js",
+      "require": "./lib/hooks/index.js",
+      "default": "./lib/hooks/index.js"
+    },
+    "./hooks/index": {
+      "@ledgerhq/source": "./src/hooks/index.tsx",
+      "import": "./lib-es/hooks/index.js",
+      "require": "./lib/hooks/index.js",
+      "default": "./lib/hooks/index.js"
+    },
+    "./hooks/logic": {
+      "@ledgerhq/source": "./src/hooks/logic.ts",
+      "import": "./lib-es/hooks/logic.js",
+      "require": "./lib/hooks/logic.js",
+      "default": "./lib/hooks/logic.js"
+    },
+    "./hooks/types": {
+      "@ledgerhq/source": "./src/hooks/types.ts",
+      "import": "./lib-es/hooks/types.js",
+      "require": "./lib/hooks/types.js",
+      "default": "./lib/hooks/types.js"
+    },
+    "./registries": {
+      "@ledgerhq/source": "./src/registries/index.ts",
+      "import": "./lib-es/registries/index.js",
+      "require": "./lib/registries/index.js",
+      "default": "./lib/registries/index.js"
+    },
+    "./registries/index": {
+      "@ledgerhq/source": "./src/registries/index.ts",
+      "import": "./lib-es/registries/index.js",
+      "require": "./lib/registries/index.js",
+      "default": "./lib/registries/index.js"
+    },
+    "./resolvers": {
+      "@ledgerhq/source": "./src/resolvers/index.ts",
+      "import": "./lib-es/resolvers/index.js",
+      "require": "./lib/resolvers/index.js",
+      "default": "./lib/resolvers/index.js"
+    },
+    "./resolvers/index": {
+      "@ledgerhq/source": "./src/resolvers/index.ts",
+      "import": "./lib-es/resolvers/index.js",
+      "require": "./lib/resolvers/index.js",
+      "default": "./lib/resolvers/index.js"
+    },
+    "./signers": {
+      "@ledgerhq/source": "./src/signers/index.ts",
+      "import": "./lib-es/signers/index.js",
+      "require": "./lib/signers/index.js",
+      "default": "./lib/signers/index.js"
+    },
+    "./signers/index": {
+      "@ledgerhq/source": "./src/signers/index.ts",
+      "import": "./lib-es/signers/index.js",
+      "require": "./lib/signers/index.js",
+      "default": "./lib/signers/index.js"
+    },
+    "./tools": {
+      "@ledgerhq/source": "./src/tools/index.ts",
+      "import": "./lib-es/tools/index.js",
+      "require": "./lib/tools/index.js",
+      "default": "./lib/tools/index.js"
+    },
+    "./tools/index": {
+      "@ledgerhq/source": "./src/tools/index.ts",
+      "import": "./lib-es/tools/index.js",
+      "require": "./lib/tools/index.js",
+      "default": "./lib/tools/index.js"
+    },
+    "./types": {
+      "@ledgerhq/source": "./src/types.ts",
+      "import": "./lib-es/types.js",
+      "require": "./lib/types.js",
+      "default": "./lib/types.js"
+    },
+    "./utils": {
+      "@ledgerhq/source": "./src/utils/index.ts",
+      "import": "./lib-es/utils/index.js",
+      "require": "./lib/utils/index.js",
+      "default": "./lib/utils/index.js"
+    },
+    "./utils/index": {
+      "@ledgerhq/source": "./src/utils/index.ts",
+      "import": "./lib-es/utils/index.js",
+      "require": "./lib/utils/index.js",
+      "default": "./lib/utils/index.js"
+    },
+    "./lib/*": "./lib/*.js",
+    "./lib-es/*": "./lib-es/*.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf lib lib-es",
+    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
+    "lint": "oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "TZ=America/New_York jest --passWithNoTests",
+    "coverage": "TZ=America/New_York jest --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "@ledgerhq/logs": "workspace:*",
+    "axios": "catalog:",
+    "eip55": "^2.1.1"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@swc/core": "catalog:",
+    "@swc/jest": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "jest": "catalog:",
+    "jest-environment-jsdom": "catalog:",
+    "jest-sonar": "catalog:",
+    "oxlint": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-test-renderer": "catalog:",
+    "typescript": "catalog:"
+  }
+}

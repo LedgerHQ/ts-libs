@@ -1,0 +1,90 @@
+{
+  "name": "@ledgerhq/live-config",
+  "version": "3.8.0",
+  "description": "Ledger Live configuration tools",
+  "license": "Apache-2.0",
+  "keywords": [
+    "Ledger"
+  ],
+  "homepage": "https://github.com/LedgerHQ/ts-libs/tree/main/libs/live-config",
+  "bugs": {
+    "url": "https://github.com/LedgerHQ/ts-libs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedgerHQ/ts-libs.git"
+  },
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    "./LiveConfig": {
+      "@ledgerhq/source": "./src/LiveConfig.ts",
+      "import": "./lib-es/LiveConfig.js",
+      "require": "./lib/LiveConfig.js",
+      "default": "./lib/LiveConfig.js"
+    },
+    "./providers": {
+      "@ledgerhq/source": "./src/providers/index.ts",
+      "import": "./lib-es/providers/index.js",
+      "require": "./lib/providers/index.js",
+      "default": "./lib/providers/index.js"
+    },
+    "./providers/index": {
+      "@ledgerhq/source": "./src/providers/index.ts",
+      "import": "./lib-es/providers/index.js",
+      "require": "./lib/providers/index.js",
+      "default": "./lib/providers/index.js"
+    },
+    "./providers/firebaseRemoteConfig": {
+      "@ledgerhq/source": "./src/providers/firebaseRemoteConfig/index.ts",
+      "import": "./lib-es/providers/firebaseRemoteConfig/index.js",
+      "require": "./lib/providers/firebaseRemoteConfig/index.js",
+      "default": "./lib/providers/firebaseRemoteConfig/index.js"
+    },
+    "./providers/firebaseRemoteConfig/index": {
+      "@ledgerhq/source": "./src/providers/firebaseRemoteConfig/index.ts",
+      "import": "./lib-es/providers/firebaseRemoteConfig/index.js",
+      "require": "./lib/providers/firebaseRemoteConfig/index.js",
+      "default": "./lib/providers/firebaseRemoteConfig/index.js"
+    },
+    "./providers/firebaseRemoteConfig/parser": {
+      "@ledgerhq/source": "./src/providers/firebaseRemoteConfig/parser.ts",
+      "import": "./lib-es/providers/firebaseRemoteConfig/parser.js",
+      "require": "./lib/providers/firebaseRemoteConfig/parser.js",
+      "default": "./lib/providers/firebaseRemoteConfig/parser.js"
+    },
+    "./lib/*": "./lib/*.js",
+    "./lib-es/*": "./lib-es/*.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf lib lib-es",
+    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
+    "lint": "oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "coverage": "jest --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "lodash": "catalog:"
+  },
+  "devDependencies": {
+    "@swc/core": "catalog:",
+    "@swc/jest": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/lodash": "catalog:",
+    "@types/node": "catalog:",
+    "jest": "catalog:",
+    "jest-environment-jsdom": "catalog:",
+    "jest-sonar": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}
