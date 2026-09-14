@@ -40,12 +40,69 @@ Read its `package.json` to confirm the npm name and version.
 
 ### 2. Dependency audit
 
-In the library's `package.json`, check `dependencies` and `peerDependencies`:
+**Hard requirement: ts-libs must be fully agnostic of ledger-live.** No package in this repo may
+depend on — or import from — a package that still lives in `ledger-live`, and that holds whether or
+not the package is published to npm. Being on npm is *not* an escape hatch: pinning
+`@ledgerhq/types-live` still means ts-libs cannot be built, typechecked or released without a
+package whose source, versioning and release cadence belong to another repo. That is the coupling
+the migration exists to remove, so re-creating it in the import defeats the point.
 
-- Are any `workspace:*` references present?
-- If yes: will those packages also migrate to ts-libs, or stay in ledger-live?
-- If they stay in ledger-live and are published to npm → no issue (just unworkspace the ref to a pinned version).
-- If they are private internal packages → **block the migration**, report to user.
+Check `dependencies`, `peerDependencies` **and every `import` in `src/`** for `@ledgerhq/*` and
+other ledger-live-internal scopes (`@domain/*`, `@shared/*`, `@support/*`). Each one must resolve to
+one of:
+
+| The dependency… | Do this |
+|---|---|
+| already lives in ts-libs | `workspace:*` |
+| migrates in the same batch | `workspace:*` |
+| is a third-party package | normal npm range, `catalog:` if shared |
+| **stays in ledger-live** | **not allowed** — resolve it before importing |
+
+To resolve a dependency that stays in ledger-live, in order of preference:
+
+1. **The dependency is really this library's own.** A type or helper parked in a shared package
+   that only this library defines the meaning of — move it here. `@ledgerhq/types-live/domain`
+   (`SupportedRegistries`, `DomainServiceResolution`) belongs to `domain-service`;
+   `EIP712Message*` belongs to `evm-tools`. TypeScript is structural, so a consumer still holding
+   the ledger-live copy keeps typechecking against the relocated one — the public surface does not
+   move. This is the usual answer for type-only deps, and it is cheap.
+2. **Migrate that package too**, in the same batch.
+3. **Invert it** — take the dependency as a parameter, a peer, or an injected value instead.
+4. **Block the migration** and report to the user. Never "just pin the npm version".
+
+A runtime peer that is a normal third-party package (`react`) is fine — declare it in
+`peerDependencies` and expect to propagate it to consumers that did not declare it themselves.
+
+Two ledger-live conventions must also not follow the library in:
+
+- **`@ledgerhq/test-quarantine`** — private flake-reporter/retry wiring in the jest config. Drop the
+  `reporters` and `setupFilesAfterEnv` entries; ts-libs uses plain `jest-sonar` (see step 9).
+- **resolving anything through the `@ledgerhq/source` condition that is not a ts-libs package.**
+  ts-libs sets `customConditions: ["@ledgerhq/source"]`, so an external `@ledgerhq/*` dependency
+  resolves to its raw `src/*.ts`, not its `.d.ts` — `skipLibCheck` stops protecting you and you
+  inherit *its* undeclared type deps. The symptom is bogus errors inside `node_modules` (missing
+  `@ledgerhq/types-devices`, "Cannot find namespace 'React'") that tempt you into adding type-only
+  devDeps to paper over them. Do not: it means rule 1 above was skipped.
+
+Run this audit again at the end of the import — it is the check that proves the repo still stands
+alone:
+
+```bash
+node -e '
+const fs=require("fs");
+const libs=fs.readdirSync("libs");
+const own=new Set(libs.map(l=>JSON.parse(fs.readFileSync(`libs/${l}/package.json`,"utf8")).name));
+let bad=0;
+for(const l of libs){
+  const m=JSON.parse(fs.readFileSync(`libs/${l}/package.json`,"utf8"));
+  for(const f of ["dependencies","peerDependencies","devDependencies"])
+    for(const [d,s] of Object.entries(m[f]||{}))
+      if(d.startsWith("@ledgerhq/") && !own.has(d)){ console.log(`FOREIGN ${m.name} ${f}: ${d}@${s}`); bad++; }
+}
+console.log(bad===0 ? "OK: ts-libs depends on no @ledgerhq package outside this repo" : `${bad} foreign deps`);
+'
+grep -rhoE 'from "@(ledgerhq|domain|shared|support)/[a-z0-9-]+' libs/*/src | sed 's/from "//' | sort -u
+```
 
 ### 3. Pending changeset check
 
@@ -213,7 +270,10 @@ Remove any ledger-live-specific path aliases or references.
 
 ### 9. Patch `jest.config.ts`
 
-If the file imports from a ledger-live base config (e.g. `../../jest.config.ts`), replace it with a self-contained config:
+Rename `jest.config.js` to `jest.config.ts`. If the file imports from a ledger-live base config
+(e.g. `../../jest.config.ts`), or wires in `@ledgerhq/test-quarantine` (a `"@ledgerhq/test-quarantine/jest"`
+reporter and a `"@ledgerhq/test-quarantine/jest-retries"` entry in `setupFilesAfterEnv`), replace it
+with a self-contained config — that package is private to ledger-live and must not be imported here:
 
 ```typescript
 export default {
@@ -266,6 +326,8 @@ Fix any other errors that arise (usually tsconfig path issues or missing deps).
 After a successful build, report:
 
 - ✅ Library imported, builds cleanly and passes `verify-pack`
+- ✅ The step 2 agnosticism audit passes — no dependency on anything still living in ledger-live
 - ⚠️ Any pending changesets found (list them)
 - ⚠️ Any open PRs that need redirecting (list them with URLs)
+- ⚠️ Any peer dependency now needing propagation to a ledger-live consumer that never declared it
 - 📋 Next steps: update ledger-live to drop workspace ref and bump to the version published from ts-libs
