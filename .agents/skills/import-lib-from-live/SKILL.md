@@ -90,19 +90,28 @@ alone:
 ```bash
 node -e '
 const fs=require("fs");
-const libs=fs.readdirSync("libs");
+const FOREIGN=/^@(ledgerhq|domain|shared|support)\//;
+// a lib dir can outlive its manifest (stale lib/, lib-es/, coverage/ after a branch switch)
+const libs=fs.readdirSync("libs").filter(l=>fs.existsSync(`libs/${l}/package.json`));
 const own=new Set(libs.map(l=>JSON.parse(fs.readFileSync(`libs/${l}/package.json`,"utf8")).name));
 let bad=0;
 for(const l of libs){
   const m=JSON.parse(fs.readFileSync(`libs/${l}/package.json`,"utf8"));
   for(const f of ["dependencies","peerDependencies","devDependencies"])
     for(const [d,s] of Object.entries(m[f]||{}))
-      if(d.startsWith("@ledgerhq/") && !own.has(d)){ console.log(`FOREIGN ${m.name} ${f}: ${d}@${s}`); bad++; }
+      if(FOREIGN.test(d) && !own.has(d)){ console.log(`FOREIGN ${m.name} ${f}: ${d}@${s}`); bad++; }
 }
-console.log(bad===0 ? "OK: ts-libs depends on no @ledgerhq package outside this repo" : `${bad} foreign deps`);
+if(bad){ console.error(`${bad} foreign deps`); process.exitCode = 1; }
+else console.log("OK: ts-libs depends on no package from outside this repo");
 '
-grep -rhoE 'from "@(ledgerhq|domain|shared|support)/[a-z0-9-]+' libs/*/src | sed 's/from "//' | sort -u
+
+# every import form, not just double-quoted `from "…"`
+grep -rhoE "(from|import|require\()[[:space:]]*\(?['\"]@(ledgerhq|domain|shared|support)/[a-zA-Z0-9._-]+" libs/*/src \
+  | grep -oE "@[a-z]+/[a-zA-Z0-9._-]+" | sort -u
 ```
+
+Both must be clean: the node check **exits non-zero** so it can be wired into CI or run under
+`set -e`, and the grep must list only ts-libs' own package names.
 
 ### 3. Pending changeset check
 

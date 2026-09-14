@@ -175,9 +175,16 @@ map, an unresolvable peer, or an ESM/CJS mismatch.
 
 ```bash
 START=$(date '+%Y-%m-%d %H:%M:%S')
-CI=true mise exec -- pnpm build:lld:deps --parallel=100% > /tmp/lld.log 2>&1; echo "exit=$?"
-find .nx/cache -maxdepth 1 -type d -newermt "$START" | wc -l   # ~the task count, never 0
+CI=true mise exec -- pnpm build:lld:deps --parallel=100% > /tmp/lld.log 2>&1
+STATUS=$?                                                         # capture before anything else runs
+FRESH=$(find .nx/cache -mindepth 1 -maxdepth 1 -type d -newermt "$START" | wc -l)
+echo "exit=$STATUS fresh=$FRESH"
+[ "$STATUS" -eq 0 ] && [ "$FRESH" -gt 0 ] || echo "NOT PROVEN"
 ```
+
+`STATUS` must be captured on the line after the build — `echo "exit=$?"` works, but any command
+between the build and the read (even the `find`) overwrites `$?`. `-mindepth 1` matters too:
+without it `find` counts `.nx/cache` itself, so a run that executed **nothing** still reports 1.
 
 Nx output is ANSI-coloured and can carry invalid UTF-8 — grep it with `LC_ALL=C grep -a`.
 
