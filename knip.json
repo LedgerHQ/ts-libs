@@ -3,6 +3,14 @@
   "workspaces": {
     "libs/*": {
       "project": ["src/**/*.ts"]
+    },
+    "libs/hw-transport": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["events"]
+    },
+    "libs/hw-transport-mocker": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["events"]
     }
   },
   "rules": {

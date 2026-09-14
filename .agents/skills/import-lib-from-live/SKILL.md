@@ -178,6 +178,12 @@ Remove wildcard sub-path exports from the `exports` field — keep only the `"."
 
 Wildcard patterns like `"./*"`, `"./lib/*"`, `"./lib-es/*"` make knip treat every `src/*.ts` file as an entry point, preventing detection of unused files. If the lib genuinely exposes named sub-paths (e.g. `@ledgerhq/foo/bar`), list them explicitly instead.
 
+Before dropping a wildcard, enumerate the sub-paths real consumers import — including the
+`@ledgerhq/*` packages **already published to npm**, whose tarballs you cannot edit. Missing
+one of those is not caught by `tsc` or by unit tests; it fails at bundle time with
+`Package subpath './x' is not defined by "exports"`. Keep a back-compat alias until those
+consumers are republished. `/test-lib-with-wallet` does this audit.
+
 ### 8. Patch `tsconfig.json`
 
 Change `"extends"` to point to the ts-libs root:

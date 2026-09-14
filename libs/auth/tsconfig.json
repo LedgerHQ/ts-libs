@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "lib",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "lib": ["DOM", "ES2021", "ES2022.Error"],
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*"]
+}

@@ -69,9 +69,14 @@ Before declaring a task done:
 4. `pnpm --filter @ledgerhq/<name> test` — tests pass
 5. `pnpm format` — formatting check passes
 
+For a change that affects what gets published — `exports`, `files`, dependency ranges, or
+any library import — also run `/test-lib-with-wallet`: a published version is immutable, and
+ledger-live is the consumer that finds the breakage first.
+
 ## Skills Available
 
 - `/import-lib-from-live` — import a library from ledger-live
+- `/test-lib-with-wallet` — pack libraries locally and prove them against a ledger-live checkout before publishing
 - `/create-changeset` — create a changeset for modified packages
 - `/github-pr` — create a well-formed draft PR
 - `/pre-review` — run a multi-agent code review before opening a PR
