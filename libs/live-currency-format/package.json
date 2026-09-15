@@ -1,0 +1,115 @@
+{
+  "name": "@ledgerhq/live-currency-format",
+  "version": "0.15.0",
+  "description": "Ledger Live currency formatting utilities",
+  "keywords": [
+    "Ledger"
+  ],
+  "homepage": "https://github.com/LedgerHQ/ts-libs/tree/main/libs/live-currency-format",
+  "bugs": {
+    "url": "https://github.com/LedgerHQ/ts-libs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedgerHQ/ts-libs.git"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "main": "lib/index.js",
+  "module": "lib-es/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./index": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./BigNumberToLocaleString": {
+      "@ledgerhq/source": "./src/BigNumberToLocaleString.ts",
+      "import": "./lib-es/BigNumberToLocaleString.js",
+      "require": "./lib/BigNumberToLocaleString.js",
+      "default": "./lib/BigNumberToLocaleString.js"
+    },
+    "./formatCurrencyUnit": {
+      "@ledgerhq/source": "./src/formatCurrencyUnit.ts",
+      "import": "./lib-es/formatCurrencyUnit.js",
+      "require": "./lib/formatCurrencyUnit.js",
+      "default": "./lib/formatCurrencyUnit.js"
+    },
+    "./localeUtility": {
+      "@ledgerhq/source": "./src/localeUtility.ts",
+      "import": "./lib-es/localeUtility.js",
+      "require": "./lib/localeUtility.js",
+      "default": "./lib/localeUtility.js"
+    },
+    "./parseCurrencyUnit": {
+      "@ledgerhq/source": "./src/parseCurrencyUnit.ts",
+      "import": "./lib-es/parseCurrencyUnit.js",
+      "require": "./lib/parseCurrencyUnit.js",
+      "default": "./lib/parseCurrencyUnit.js"
+    },
+    "./priceFormat": {
+      "@ledgerhq/source": "./src/priceFormat.ts",
+      "import": "./lib-es/priceFormat.js",
+      "require": "./lib/priceFormat.js",
+      "default": "./lib/priceFormat.js"
+    },
+    "./rtl": {
+      "@ledgerhq/source": "./src/rtl.ts",
+      "import": "./lib-es/rtl.js",
+      "require": "./lib/rtl.js",
+      "default": "./lib/rtl.js"
+    },
+    "./sanitizeValueString": {
+      "@ledgerhq/source": "./src/sanitizeValueString.ts",
+      "import": "./lib-es/sanitizeValueString.js",
+      "require": "./lib/sanitizeValueString.js",
+      "default": "./lib/sanitizeValueString.js"
+    },
+    "./types": {
+      "@ledgerhq/source": "./src/types.ts",
+      "import": "./lib-es/types.js",
+      "require": "./lib/types.js",
+      "default": "./lib/types.js"
+    },
+    "./lib/*": "./lib/*.js",
+    "./lib-es/*": "./lib-es/*.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf lib lib-es",
+    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
+    "lint": "oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "coverage": "jest --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.1.2"
+  },
+  "devDependencies": {
+    "@swc/core": "catalog:",
+    "@swc/jest": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "jest": "catalog:",
+    "jest-sonar": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}
