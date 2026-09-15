@@ -164,6 +164,34 @@ CI=true mise exec -- pnpm typecheck
 Run the **builds**, not just `typecheck` — rspack/metro are what catch a broken `exports`
 map, an unresolvable peer, or an ESM/CJS mismatch.
 
+**Two ways this step reports a pass without having tested anything:**
+
+- **`… | tail` returns the pipe's exit code, not pnpm's.** Redirect to a log and read `$?`, or the
+  first failing build looks like a success.
+- **nx replays the run from its local cache.** A second invocation prints
+  `Successfully ran target build …` next to `read the output from the cache for N out of N tasks`
+  — nothing executed. Prove real execution by counting cache entries written during the run: nx
+  only writes an entry for a task that ran *and* passed, so N fresh entries == N tasks proved.
+
+```bash
+START=$(date '+%Y-%m-%d %H:%M:%S')
+CI=true mise exec -- pnpm build:lld:deps --parallel=100% > /tmp/lld.log 2>&1
+STATUS=$?                                                         # capture before anything else runs
+FRESH=$(find .nx/cache -mindepth 1 -maxdepth 1 -type d -newermt "$START" | wc -l)
+echo "exit=$STATUS fresh=$FRESH"
+[ "$STATUS" -eq 0 ] && [ "$FRESH" -gt 0 ] || echo "NOT PROVEN"
+```
+
+`STATUS` must be captured on the line after the build — `echo "exit=$?"` works, but any command
+between the build and the read (even the `find`) overwrites `$?`. `-mindepth 1` matters too:
+without it `find` counts `.nx/cache` itself, so a run that executed **nothing** still reports 1.
+
+Nx output is ANSI-coloured and can carry invalid UTF-8 — grep it with `LC_ALL=C grep -a`.
+
+Reading ledger-live's `pnpm typecheck`: `scripts/typecheck.js` keeps only diagnostics under the
+app's own `src`/`tests`/`tools` and prints `(Filtered N errors)` for everything else. A large N is
+its standing baseline, not damage from your change.
+
 Compute the test targets instead of guessing: every manifest that depends on a packed lib
 *and* has a `test` script, then `nx run-many -t test -p <list> --parallel=6`.
 
@@ -186,6 +214,13 @@ console.log([...out].join(","));
 unrelated to your change. Before calling anything a regression: check the suite even
 references a packed lib (`grep -c "@ledgerhq/<name>" <suite>` → `0` means suspect), then
 re-run it alone at low parallelism.
+
+A suite that *does* reference a packed lib still is not proof — **classify it against the clean
+baseline**, which the revert in step 7 gives you for free: `git checkout -- .`, reinstall, re-run
+that one target. Same failure ⇒ pre-existing. This matters most for undeclared ("phantom")
+dependencies: a package that a manifest never declared but resolved anyway through workspace
+hoisting fails the moment the lib arrives as a tarball — and fails identically on develop once
+`node_modules` has been nuked. The nuke, not your change, is what exposed it.
 
 ### 7. Report and revert
 
