@@ -26,7 +26,8 @@ updates:
           - "jest"
           - "jest-*"
           - "knip"
-          - "msw"
+          # msw is deliberately not grouped: it drives test behaviour, and its
+          # minors have shipped breaking type and ESM changes.
           - "nx"
           - "ox*"
           - "prettier"
