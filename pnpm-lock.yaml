@@ -232,7 +232,7 @@ importers:
         version: 30.5.1(@types/node@26.5.1)
       jest-environment-jsdom:
         specifier: 'catalog:'
-        version: 30.5.1
+        version: 30.5.1(supports-color@7.2.0)
       jest-sonar:
         specifier: 'catalog:'
         version: 0.2.16
@@ -401,7 +401,7 @@ importers:
         version: 30.5.1(@types/node@26.5.1)
       jest-environment-jsdom:
         specifier: 'catalog:'
-        version: 30.5.1
+        version: 30.5.1(supports-color@7.2.0)
       jest-sonar:
         specifier: 'catalog:'
         version: 0.2.16
@@ -571,8 +571,8 @@ importers:
   libs/psbtv2:
     dependencies:
       bitcoinjs-lib:
-        specifier: ^6.1.7
-        version: 6.1.7
+        specifier: ^6.1.8
+        version: 6.1.8
       varuint-bitcoin:
         specifier: 1.1.2
         version: 1.1.2
@@ -2512,8 +2512,8 @@ packages:
     resolution: {integrity: sha512-mdFV5+/v0XyNYXjBS6CQPLo9ekCx4gtKZFnJm5PMto7Fs9hTTDpkkzOB7/FtluRI6JbUUAu+snTYfJRgHLZbZQ==}
     engines: {node: '>=8.0.0'}
 
-  bitcoinjs-lib@6.1.7:
-    resolution: {integrity: sha512-tlf/r2DGMbF7ky1MgUqXHzypYHakkEnm0SZP23CJKIqNY/5uNAnMbFhMJdhjrL/7anfb/U8+AlpdjPWjPnAalg==}
+  bitcoinjs-lib@6.1.8:
+    resolution: {integrity: sha512-A6o+yq7BvwlmLj4F0NC5f3XX109rRe5evxi368S9zil5voOtUfiqfiMCzZYKHk4k7iIJ3+NmcQW05Ar4CBlKyg==}
     engines: {node: '>=8.0.0'}
 
   bl@4.1.0:
@@ -4988,7 +4988,7 @@ snapshots:
       '@types/node': 26.5.1
       jest-mock: 30.5.1
       jest-util: 30.5.1
-      jsdom: 26.1.0
+      jsdom: 26.1.0(supports-color@7.2.0)
 
   '@jest/environment@30.5.1':
     dependencies:
@@ -6033,7 +6033,7 @@ snapshots:
 
   bip174@2.1.1: {}
 
-  bitcoinjs-lib@6.1.7:
+  bitcoinjs-lib@6.1.8:
     dependencies:
       '@noble/hashes': 1.8.0
       bech32: 2.0.0
@@ -6552,7 +6552,7 @@ snapshots:
 
   html-escaper@2.0.2: {}
 
-  http-proxy-agent@7.0.2:
+  http-proxy-agent@7.0.2(supports-color@7.2.0):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@7.2.0)
@@ -6566,7 +6566,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@7.0.6:
+  https-proxy-agent@7.0.6(supports-color@7.2.0):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@7.2.0)
@@ -6790,12 +6790,12 @@ snapshots:
       jest-util: 30.5.1
       pretty-format: 30.5.1
 
-  jest-environment-jsdom@30.5.1:
+  jest-environment-jsdom@30.5.1(supports-color@7.2.0):
     dependencies:
       '@jest/environment': 30.5.1
       '@jest/environment-jsdom-abstract': 30.5.1(@types/jsdom@21.1.7)(jsdom@26.1.0)
       '@types/jsdom': 21.1.7
-      jsdom: 26.1.0
+      jsdom: 26.1.0(supports-color@7.2.0)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -7069,14 +7069,14 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@26.1.0:
+  jsdom@26.1.0(supports-color@7.2.0):
     dependencies:
       cssstyle: 4.6.0
       data-urls: 5.0.0
       decimal.js: 10.6.0
       html-encoding-sniffer: 4.0.0
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      http-proxy-agent: 7.0.2(supports-color@7.2.0)
+      https-proxy-agent: 7.0.6(supports-color@7.2.0)
       is-potential-custom-element-name: 1.0.1
       nwsapi: 2.2.27
       parse5: 7.3.0
