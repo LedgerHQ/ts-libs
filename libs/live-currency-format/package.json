@@ -100,7 +100,7 @@
     "coverage": "jest --coverage --passWithNoTests"
   },
   "dependencies": {
-    "bignumber.js": "^9.1.2"
+    "bignumber.js": "^11.1.5"
   },
   "devDependencies": {
     "@swc/core": "catalog:",
