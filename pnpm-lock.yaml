@@ -70,8 +70,8 @@ catalogs:
       specifier: 19.1.4
       version: 19.1.4
     react-dom:
-      specifier: 19.1.4
-      version: 19.1.4
+      specifier: 19.3.0
+      version: 19.3.0
     react-test-renderer:
       specifier: 19.1.4
       version: 19.1.4
@@ -217,7 +217,7 @@ importers:
         version: 6.9.1
       '@testing-library/react':
         specifier: 'catalog:'
-        version: 16.3.1(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+        version: 16.3.1(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.3.0(react@19.1.4))(react@19.1.4)
       '@types/jest':
         specifier: 'catalog:'
         version: 30.0.0
@@ -244,7 +244,7 @@ importers:
         version: 19.1.4
       react-dom:
         specifier: 'catalog:'
-        version: 19.1.4(react@19.1.4)
+        version: 19.3.0(react@19.1.4)
       react-test-renderer:
         specifier: 'catalog:'
         version: 19.1.4(react@19.1.4)
@@ -3745,10 +3745,10 @@ packages:
   querystringify@2.2.0:
     resolution: {integrity: sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==}
 
-  react-dom@19.1.4:
-    resolution: {integrity: sha512-s2868ab/xo2SI6H4106A7aFI8Mrqa4xC6HZT/pBzYyQ3cBLqa88hu47xYD8xf+uECleN698Awn7RCWlkTiKnqQ==}
+  react-dom@19.3.0:
+    resolution: {integrity: sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==}
     peerDependencies:
-      react: ^19.1.4
+      react: ^19.3.0
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -3836,6 +3836,9 @@ packages:
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
+
+  scheduler@0.28.0:
+    resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -5663,12 +5666,12 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@16.3.1(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
+  '@testing-library/react@16.3.1(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.3.0(react@19.1.4))(react@19.1.4)':
     dependencies:
       '@babel/runtime': 7.29.7
       '@testing-library/dom': 10.4.2
       react: 19.1.4
-      react-dom: 19.1.4(react@19.1.4)
+      react-dom: 19.3.0(react@19.1.4)
     optionalDependencies:
       '@types/react': 19.0.14
 
@@ -7604,10 +7607,10 @@ snapshots:
 
   querystringify@2.2.0: {}
 
-  react-dom@19.1.4(react@19.1.4):
+  react-dom@19.3.0(react@19.1.4):
     dependencies:
       react: 19.1.4
-      scheduler: 0.26.0
+      scheduler: 0.28.0
 
   react-is@17.0.2: {}
 
@@ -7676,6 +7679,8 @@ snapshots:
       xmlchars: 2.2.0
 
   scheduler@0.26.0: {}
+
+  scheduler@0.28.0: {}
 
   semver@6.3.1: {}
 
