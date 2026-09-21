@@ -19,8 +19,8 @@ catalogs:
       specifier: 0.2.39
       version: 0.2.39
     '@testing-library/dom':
-      specifier: 10.4.1
-      version: 10.4.1
+      specifier: 10.4.2
+      version: 10.4.2
     '@testing-library/jest-dom':
       specifier: 6.9.1
       version: 6.9.1
@@ -211,13 +211,13 @@ importers:
         version: 0.2.39(@swc/core@1.16.2)
       '@testing-library/dom':
         specifier: 'catalog:'
-        version: 10.4.1
+        version: 10.4.2
       '@testing-library/jest-dom':
         specifier: 'catalog:'
         version: 6.9.1
       '@testing-library/react':
         specifier: 'catalog:'
-        version: 16.3.1(@testing-library/dom@10.4.1)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+        version: 16.3.1(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       '@types/jest':
         specifier: 'catalog:'
         version: 30.0.0
@@ -232,7 +232,7 @@ importers:
         version: 30.5.1(@types/node@26.5.1)
       jest-environment-jsdom:
         specifier: 'catalog:'
-        version: 30.5.1
+        version: 30.5.1(supports-color@7.2.0)
       jest-sonar:
         specifier: 'catalog:'
         version: 0.2.16
@@ -401,7 +401,7 @@ importers:
         version: 30.5.1(@types/node@26.5.1)
       jest-environment-jsdom:
         specifier: 'catalog:'
-        version: 30.5.1
+        version: 30.5.1(supports-color@7.2.0)
       jest-sonar:
         specifier: 'catalog:'
         version: 0.2.16
@@ -2045,8 +2045,8 @@ packages:
   '@swc/types@0.1.28':
     resolution: {integrity: sha512-V6Mnml8v09QALx6K0elJ7o9K/MkVDtW3t6L+7Ou/JcWtb3xwId2AH4FeOceySd2JaO87IMw4+6vSZxLm34LPbw==}
 
-  '@testing-library/dom@10.4.1':
-    resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
+  '@testing-library/dom@10.4.2':
+    resolution: {integrity: sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q==}
     engines: {node: '>=18'}
 
   '@testing-library/jest-dom@6.9.1':
@@ -4988,7 +4988,7 @@ snapshots:
       '@types/node': 26.5.1
       jest-mock: 30.5.1
       jest-util: 30.5.1
-      jsdom: 26.1.0
+      jsdom: 26.1.0(supports-color@7.2.0)
 
   '@jest/environment@30.5.1':
     dependencies:
@@ -5643,7 +5643,7 @@ snapshots:
     dependencies:
       '@swc/counter': 0.1.3
 
-  '@testing-library/dom@10.4.1':
+  '@testing-library/dom@10.4.2':
     dependencies:
       '@babel/code-frame': 7.29.7
       '@babel/runtime': 7.29.7
@@ -5663,10 +5663,10 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@16.3.1(@testing-library/dom@10.4.1)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
+  '@testing-library/react@16.3.1(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
     dependencies:
       '@babel/runtime': 7.29.7
-      '@testing-library/dom': 10.4.1
+      '@testing-library/dom': 10.4.2
       react: 19.1.4
       react-dom: 19.1.4(react@19.1.4)
     optionalDependencies:
@@ -6552,7 +6552,7 @@ snapshots:
 
   html-escaper@2.0.2: {}
 
-  http-proxy-agent@7.0.2:
+  http-proxy-agent@7.0.2(supports-color@7.2.0):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@7.2.0)
@@ -6566,7 +6566,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@7.0.6:
+  https-proxy-agent@7.0.6(supports-color@7.2.0):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@7.2.0)
@@ -6790,12 +6790,12 @@ snapshots:
       jest-util: 30.5.1
       pretty-format: 30.5.1
 
-  jest-environment-jsdom@30.5.1:
+  jest-environment-jsdom@30.5.1(supports-color@7.2.0):
     dependencies:
       '@jest/environment': 30.5.1
       '@jest/environment-jsdom-abstract': 30.5.1(@types/jsdom@21.1.7)(jsdom@26.1.0)
       '@types/jsdom': 21.1.7
-      jsdom: 26.1.0
+      jsdom: 26.1.0(supports-color@7.2.0)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -7069,14 +7069,14 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@26.1.0:
+  jsdom@26.1.0(supports-color@7.2.0):
     dependencies:
       cssstyle: 4.6.0
       data-urls: 5.0.0
       decimal.js: 10.6.0
       html-encoding-sniffer: 4.0.0
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      http-proxy-agent: 7.0.2(supports-color@7.2.0)
+      https-proxy-agent: 7.0.6(supports-color@7.2.0)
       is-potential-custom-element-name: 1.0.1
       nwsapi: 2.2.27
       parse5: 7.3.0
