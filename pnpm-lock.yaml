@@ -73,8 +73,8 @@ catalogs:
       specifier: 19.1.4
       version: 19.1.4
     react-test-renderer:
-      specifier: 19.1.4
-      version: 19.1.4
+      specifier: 19.3.0
+      version: 19.3.0
     rxjs:
       specifier: 7.8.2
       version: 7.8.2
@@ -232,7 +232,7 @@ importers:
         version: 30.5.1(@types/node@26.5.1)
       jest-environment-jsdom:
         specifier: 'catalog:'
-        version: 30.5.1
+        version: 30.5.1(supports-color@7.2.0)
       jest-sonar:
         specifier: 'catalog:'
         version: 0.2.16
@@ -247,7 +247,7 @@ importers:
         version: 19.1.4(react@19.1.4)
       react-test-renderer:
         specifier: 'catalog:'
-        version: 19.1.4(react@19.1.4)
+        version: 19.3.0(react@19.1.4)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -401,7 +401,7 @@ importers:
         version: 30.5.1(@types/node@26.5.1)
       jest-environment-jsdom:
         specifier: 'catalog:'
-        version: 30.5.1
+        version: 30.5.1(supports-color@7.2.0)
       jest-sonar:
         specifier: 'catalog:'
         version: 0.2.16
@@ -3759,10 +3759,13 @@ packages:
   react-is@19.2.7:
     resolution: {integrity: sha512-kZFnouyVv7eP/Phmrlo9FK+zcAdriZJvzxXHF1Sl1P377WSGe2G/JxVolhTrB/jeV47lKImhNUsijjHAAbcl/A==}
 
-  react-test-renderer@19.1.4:
-    resolution: {integrity: sha512-dmcR2lSwouaNJKNRd53eeZHuWjF4YYZIq/q6wLiVz50ENrkU/Pds+pS+4XyJ/nwWmjA1ZhHxAp+vfR8A9PEcYQ==}
+  react-is@19.3.0:
+    resolution: {integrity: sha512-UpMYezM4v5/18F28aC66AEsjXIgE02kyEMH6yLdgLXu/UTfa1Ntwck/nNLrbqJsEXW7gPb0coNO9FQse9WTovA==}
+
+  react-test-renderer@19.3.0:
+    resolution: {integrity: sha512-AUxgv+hRbqjRgx4xVwiWL6cvDDKPAva1VWLXQIMoevqQn9us//C5TX9LEnBGH47D0zvJpjwjxb1umzgOMvE8Wg==}
     peerDependencies:
-      react: ^19.1.4
+      react: ^19.3.0
 
   react@19.1.4:
     resolution: {integrity: sha512-DHINL3PAmPUiK1uszfbKiXqfE03eszdt5BpVSuEAHb5nfmNPwnsy7g39h2t8aXFc/Bv99GH81s+j8dobtD+jOw==}
@@ -3836,6 +3839,9 @@ packages:
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
+
+  scheduler@0.28.0:
+    resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -4988,7 +4994,7 @@ snapshots:
       '@types/node': 26.5.1
       jest-mock: 30.5.1
       jest-util: 30.5.1
-      jsdom: 26.1.0
+      jsdom: 26.1.0(supports-color@7.2.0)
 
   '@jest/environment@30.5.1':
     dependencies:
@@ -6552,7 +6558,7 @@ snapshots:
 
   html-escaper@2.0.2: {}
 
-  http-proxy-agent@7.0.2:
+  http-proxy-agent@7.0.2(supports-color@7.2.0):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@7.2.0)
@@ -6566,7 +6572,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@7.0.6:
+  https-proxy-agent@7.0.6(supports-color@7.2.0):
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@7.2.0)
@@ -6790,12 +6796,12 @@ snapshots:
       jest-util: 30.5.1
       pretty-format: 30.5.1
 
-  jest-environment-jsdom@30.5.1:
+  jest-environment-jsdom@30.5.1(supports-color@7.2.0):
     dependencies:
       '@jest/environment': 30.5.1
       '@jest/environment-jsdom-abstract': 30.5.1(@types/jsdom@21.1.7)(jsdom@26.1.0)
       '@types/jsdom': 21.1.7
-      jsdom: 26.1.0
+      jsdom: 26.1.0(supports-color@7.2.0)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -7069,14 +7075,14 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@26.1.0:
+  jsdom@26.1.0(supports-color@7.2.0):
     dependencies:
       cssstyle: 4.6.0
       data-urls: 5.0.0
       decimal.js: 10.6.0
       html-encoding-sniffer: 4.0.0
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      http-proxy-agent: 7.0.2(supports-color@7.2.0)
+      https-proxy-agent: 7.0.6(supports-color@7.2.0)
       is-potential-custom-element-name: 1.0.1
       nwsapi: 2.2.27
       parse5: 7.3.0
@@ -7615,11 +7621,13 @@ snapshots:
 
   react-is@19.2.7: {}
 
-  react-test-renderer@19.1.4(react@19.1.4):
+  react-is@19.3.0: {}
+
+  react-test-renderer@19.3.0(react@19.1.4):
     dependencies:
       react: 19.1.4
-      react-is: 19.2.7
-      scheduler: 0.26.0
+      react-is: 19.3.0
+      scheduler: 0.28.0
 
   react@19.1.4: {}
 
@@ -7676,6 +7684,8 @@ snapshots:
       xmlchars: 2.2.0
 
   scheduler@0.26.0: {}
+
+  scheduler@0.28.0: {}
 
   semver@6.3.1: {}
 
