@@ -28,7 +28,7 @@ catalog:
   axios: "1.13.5"
   zod: "4.4.3"
   jest-environment-jsdom: "30.5.1"
-  "@testing-library/dom": "10.4.1"
+  "@testing-library/dom": "10.4.2"
   "@testing-library/jest-dom": "6.9.1"
   "@testing-library/react": "16.3.1"
   react: "19.1.4"
