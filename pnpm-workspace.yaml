@@ -3,26 +3,37 @@ packages:
 
 allowBuilds:
   "@parcel/watcher": false
+  keccak: true
   "@swc/core": true
   msw: true
   nx: true
   unrs-resolver: true
 
 catalog:
-  "@commitlint/cli": "21.2.1"
-  "@commitlint/config-conventional": "21.2.0"
+  "@commitlint/cli": "21.2.2"
+  "@commitlint/config-conventional": "21.2.2"
   jest-sonar: "0.2.16"
   typescript: "7.0.2"
-  "@types/node": "26.4.0"
+  "@types/node": "26.6.1"
   "@types/jest": "30.0.0"
-  jest: "30.5.0"
+  jest: "30.5.1"
   "@swc/jest": "0.2.39"
-  "@swc/core": "1.16.1"
+  "@swc/core": "1.16.2"
   msw: "2.7.3"
-  oxlint: "1.80.0"
-  oxfmt: "0.65.0"
+  oxlint: "1.83.0"
+  oxfmt: "0.68.0"
   semver: "7.7.3"
   "@types/semver": "7.7.1"
   rxjs: "7.8.2"
   axios: "1.13.5"
   zod: "4.4.3"
+  jest-environment-jsdom: "30.5.1"
+  "@testing-library/dom": "10.4.2"
+  "@testing-library/jest-dom": "7.0.1"
+  "@testing-library/react": "16.3.3"
+  react: "19.1.4"
+  react-dom: "19.1.4"
+  "@types/react": "19.0.14"
+  react-test-renderer: "19.1.4"
+  lodash: "4.17.21"
+  "@types/lodash": "^4.17.21"
