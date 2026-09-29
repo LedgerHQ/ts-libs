@@ -1,0 +1,80 @@
+{
+  "name": "@ledgerhq/hw-ledger-key-ring-protocol",
+  "version": "0.13.0",
+  "description": "Ledger Key Ring Protocol hardware layer",
+  "keywords": [
+    "Ledger"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedgerHQ/ts-libs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LedgerHQ/ts-libs/issues"
+  },
+  "homepage": "https://github.com/LedgerHQ/ts-libs/tree/main/libs/hw-ledger-key-ring-protocol",
+  "main": "lib/index.js",
+  "module": "lib-es/index.js",
+  "types": "lib/index.d.ts",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@ledgerhq/hw-transport": "workspace:*",
+    "bip32": "^4.0.0",
+    "@noble/curves": "catalog:",
+    "create-hmac": "^1.1.7"
+  },
+  "devDependencies": {
+    "@swc/core": "catalog:",
+    "@swc/jest": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "jest": "catalog:",
+    "jest-sonar": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
+    "lint": "oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "coverage": "jest --coverage --passWithNoTests",
+    "clean": "rm -rf lib lib-es"
+  },
+  "exports": {
+    ".": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./ApduDevice": {
+      "@ledgerhq/source": "./src/ApduDevice.ts",
+      "import": "./lib-es/ApduDevice.js",
+      "require": "./lib/ApduDevice.js",
+      "default": "./lib/ApduDevice.js"
+    },
+    "./CommandBlock": {
+      "@ledgerhq/source": "./src/CommandBlock.ts",
+      "import": "./lib-es/CommandBlock.js",
+      "require": "./lib/CommandBlock.js",
+      "default": "./lib/CommandBlock.js"
+    },
+    "./Crypto": {
+      "@ledgerhq/source": "./src/Crypto.ts",
+      "import": "./lib-es/Crypto.js",
+      "require": "./lib/Crypto.js",
+      "default": "./lib/Crypto.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
