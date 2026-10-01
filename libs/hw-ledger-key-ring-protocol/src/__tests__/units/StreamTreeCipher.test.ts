@@ -97,7 +97,7 @@ describe("StreamTreeCipher", () => {
     const cipher = StreamTreeCipher.create(alice);
     const encrypted = await cipher.encrypt(tree, PATH, message);
     encrypted[55] ^= 0xff;
-    await expect(cipher.decrypt(tree, PATH, encrypted)).rejects.toThrow(/authenticate/);
+    await expect(cipher.decrypt(tree, PATH, encrypted)).rejects.toThrow(/invalid ghash tag/);
   });
 
   it("fails to decrypt with a device that is not part of the stream", async () => {

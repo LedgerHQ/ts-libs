@@ -20,8 +20,9 @@
   "dependencies": {
     "@ledgerhq/hw-transport": "workspace:*",
     "bip32": "^4.0.0",
+    "@noble/ciphers": "catalog:",
     "@noble/curves": "catalog:",
-    "create-hmac": "^1.1.7"
+    "@noble/hashes": "catalog:"
   },
   "devDependencies": {
     "@swc/core": "catalog:",
