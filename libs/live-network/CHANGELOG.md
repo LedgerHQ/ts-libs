@@ -1,5 +1,11 @@
 # @ledgerhq/live-network
 
+## 3.2.0
+
+### Minor Changes
+
+- [#118](https://github.com/LedgerHQ/ts-libs/pull/118) [`780fa8a`](https://github.com/LedgerHQ/ts-libs/commit/780fa8a6539909b9b98999a91093ac19635222d2) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Bump axios to 1.20.0
+
 ## 3.1.0
 
 ### Minor Changes
