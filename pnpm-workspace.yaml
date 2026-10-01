@@ -45,6 +45,6 @@ catalog:
   "@ledgerhq/speculos-device-controller": "0.3.0"
   "@reduxjs/toolkit": "2.11.2"
   isomorphic-ws: "5.0.0"
-  ws: "8.18.3"
+  ws: "8.21.0"
   expect: "30.5.0"
   "@types/ws": "^8.5.10"
