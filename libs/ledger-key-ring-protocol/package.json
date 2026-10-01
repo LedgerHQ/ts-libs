@@ -1,0 +1,131 @@
+{
+  "name": "@ledgerhq/ledger-key-ring-protocol",
+  "version": "0.23.0",
+  "description": "Ledger Key Ring Protocol layer",
+  "keywords": [
+    "Ledger"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LedgerHQ/ts-libs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LedgerHQ/ts-libs/issues"
+  },
+  "homepage": "https://github.com/LedgerHQ/ts-libs/tree/main/libs/ledger-key-ring-protocol",
+  "main": "lib/index.js",
+  "module": "lib-es/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./api": {
+      "@ledgerhq/source": "./src/api.ts",
+      "import": "./lib-es/api.js",
+      "require": "./lib/api.js",
+      "default": "./lib/api.js"
+    },
+    "./errors": {
+      "@ledgerhq/source": "./src/errors.ts",
+      "import": "./lib-es/errors.js",
+      "require": "./lib/errors.js",
+      "default": "./lib/errors.js"
+    },
+    "./index": {
+      "@ledgerhq/source": "./src/index.ts",
+      "import": "./lib-es/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./qrcode/index": {
+      "@ledgerhq/source": "./src/qrcode/index.ts",
+      "import": "./lib-es/qrcode/index.js",
+      "require": "./lib/qrcode/index.js",
+      "default": "./lib/qrcode/index.js"
+    },
+    "./store": {
+      "@ledgerhq/source": "./src/store.ts",
+      "import": "./lib-es/store.js",
+      "require": "./lib/store.js",
+      "default": "./lib/store.js"
+    },
+    "./types": {
+      "@ledgerhq/source": "./src/types.ts",
+      "import": "./lib-es/types.js",
+      "require": "./lib/types.js",
+      "default": "./lib/types.js"
+    },
+    "./utils": {
+      "@ledgerhq/source": "./src/utils.ts",
+      "import": "./lib-es/utils.js",
+      "require": "./lib/utils.js",
+      "default": "./lib/utils.js"
+    },
+    "./__mocks__/challenge": {
+      "@ledgerhq/source": "./src/__mocks__/challenge.ts",
+      "import": "./lib-es/__mocks__/challenge.js",
+      "require": "./lib/__mocks__/challenge.js",
+      "default": "./lib/__mocks__/challenge.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@ledgerhq/hw-ledger-key-ring-protocol": "workspace:*",
+    "@ledgerhq/hw-transport": "workspace:*",
+    "@ledgerhq/auth": "workspace:*",
+    "@ledgerhq/live-network": "workspace:*",
+    "@ledgerhq/logs": "workspace:*",
+    "base64-js": "1",
+    "isomorphic-ws": "catalog:",
+    "rxjs": "catalog:",
+    "ws": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@ledgerhq/device-management-kit": "catalog:",
+    "@ledgerhq/device-transport-kit-speculos": "catalog:",
+    "@ledgerhq/devices": "workspace:*",
+    "@ledgerhq/hw-transport-mocker": "workspace:*",
+    "@ledgerhq/speculos-device-controller": "catalog:",
+    "@reduxjs/toolkit": "catalog:",
+    "@swc/core": "catalog:",
+    "@swc/jest": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "@types/ws": "catalog:",
+    "axios": "catalog:",
+    "bip39": "^3.0.4",
+    "expect": "catalog:",
+    "fetch-cookie": "3.2.0",
+    "jest": "catalog:",
+    "jest-sonar": "catalog:",
+    "msw": "catalog:",
+    "oxlint": "catalog:",
+    "ts-node": "^10.9.2",
+    "typescript": "catalog:"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
+    "lint": "oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "coverage": "jest --coverage --passWithNoTests",
+    "clean": "rm -rf lib lib-es",
+    "e2e": "ts-node scripts/e2e.ts",
+    "keycloak-auth": "ts-node --transpile-only scripts/keycloakAuth.ts"
+  },
+  "files": [
+    "lib",
+    "lib-es",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
