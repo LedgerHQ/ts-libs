@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
 
       - uses: LedgerHQ/ts-libs/.github/actions/jfrog-npm-auth@develop
         with:
@@ -76,7 +76,7 @@ jobs:
       - name: SonarQube Scan
         # Dependabot runs read only the Dependabot secret store, so SONAR_TOKEN is empty there.
         if: github.actor != 'dependabot[bot]'
-        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
