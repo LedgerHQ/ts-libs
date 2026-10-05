@@ -19,7 +19,7 @@ catalog:
   jest: "30.5.2"
   "@swc/jest": "0.2.39"
   "@swc/core": "1.16.2"
-  msw: "2.7.3"
+  msw: "3.0.1"
   oxlint: "1.85.0"
   oxfmt: "0.70.0"
   semver: "7.7.3"
