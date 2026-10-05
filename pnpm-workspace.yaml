@@ -46,5 +46,5 @@ catalog:
   "@reduxjs/toolkit": "2.11.2"
   isomorphic-ws: "5.0.0"
   ws: "8.21.0"
-  expect: "30.5.0"
+  expect: "30.5.2"
   "@types/ws": "^8.5.10"

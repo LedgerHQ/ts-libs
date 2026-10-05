@@ -70,8 +70,8 @@ catalogs:
       specifier: 1.20.0
       version: 1.20.0
     expect:
-      specifier: 30.5.0
-      version: 30.5.0
+      specifier: 30.5.2
+      version: 30.5.2
     isomorphic-ws:
       specifier: 5.0.0
       version: 5.0.0
@@ -525,7 +525,7 @@ importers:
         version: 3.1.0
       expect:
         specifier: 'catalog:'
-        version: 30.5.0
+        version: 30.5.2
       fetch-cookie:
         specifier: 3.2.0
         version: 3.2.0
