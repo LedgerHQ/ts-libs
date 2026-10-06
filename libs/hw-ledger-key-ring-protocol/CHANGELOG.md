@@ -1,5 +1,22 @@
 # @ledgerhq/hw-ledger-key-ring-protocol
 
+## 1.0.0
+
+### Major Changes
+
+- [#136](https://github.com/LedgerHQ/ts-libs/pull/136) [`34e071c`](https://github.com/LedgerHQ/ts-libs/commit/34e071cded156e78fa8994b58248656512e920e9) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Upgrade @noble/curves, @noble/hashes and @noble/ciphers to v2 (ESM-only, `.js` subpath imports).
+  
+  Breaking: the CJS entry now `require`s ESM-only packages. Consumers need Node >= 20.19 / 22.12 (or a bundler), and their Jest configs must transform `@noble`:
+  
+  ```diff
+  +  transform: { "^.+\\.(ts|tsx|js)$": ["@swc/jest", { jsc: { target: "es2022" } }] },
+  +  transformIgnorePatterns: ["/node_modules/(?!(\\.pnpm/)?@noble)"],
+  ```
+
+### Patch Changes
+
+- [#127](https://github.com/LedgerHQ/ts-libs/pull/127) [`640e199`](https://github.com/LedgerHQ/ts-libs/commit/640e19985efe86aaa2014145fdec930d6e7c2d72) Thanks [@dependabot](https://github.com/apps/dependabot)! - Bump bip32 from 4.0.0 to 5.0.1
+
 ## 0.14.0
 
 ### Minor Changes

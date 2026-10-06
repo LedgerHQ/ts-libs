@@ -1,5 +1,13 @@
 # @ledgerhq/evm-tools
 
+## 2.0.0
+
+### Major Changes
+
+- [#137](https://github.com/LedgerHQ/ts-libs/pull/137) [`b965e6f`](https://github.com/LedgerHQ/ts-libs/commit/b965e6fa45bfebd87074aec5703effe26e6a46bb) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Replace deprecated `crypto-js` with `@noble/hashes` v2 for the EIP712 schema hash (output unchanged).
+  
+  Breaking: the CJS entry now `require`s the ESM-only `@noble/hashes`. Consumers need Node >= 20.19 / 22.12 (or a bundler), and their Jest configs must transform `@noble` (`transformIgnorePatterns: ["/node_modules/(?!(\\.pnpm/)?@noble)"]` plus a `.js` transform).
+
 ## 1.15.1
 
 ### Patch Changes
