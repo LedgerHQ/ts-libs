@@ -1,8 +1,8 @@
-import { secp256k1 } from "@noble/curves/secp256k1";
-import { gcm } from "@noble/ciphers/aes";
-import { hmac } from "@noble/hashes/hmac";
-import { sha256 } from "@noble/hashes/sha2";
-import { randomBytes as nobleRandomBytes } from "@noble/hashes/utils";
+import { secp256k1 } from "@noble/curves/secp256k1.js";
+import { gcm } from "@noble/ciphers/aes.js";
+import { hmac } from "@noble/hashes/hmac.js";
+import { sha256 } from "@noble/hashes/sha2.js";
+import { randomBytes as nobleRandomBytes } from "@noble/hashes/utils.js";
 import { BIP32Factory } from "bip32";
 
 import { Crypto, KeyPair, KeyPairWithChainCode } from "./Crypto";
@@ -121,8 +121,7 @@ export const eccWrapper = {
   sign(hash: Uint8Array | Buffer, privateKey: Uint8Array | Buffer): Uint8Array {
     const hashBytes = hash instanceof Buffer ? new Uint8Array(hash) : hash;
     const keyBytes = privateKey instanceof Buffer ? new Uint8Array(privateKey) : privateKey;
-    const signature = secp256k1.sign(hashBytes, keyBytes, { prehash: false });
-    return signature.toBytes("compact");
+    return secp256k1.sign(hashBytes, keyBytes, { prehash: false });
   },
 
   verify(
@@ -230,7 +229,7 @@ export class NobleCryptoSecp256k1 implements Crypto {
     // Note: Using prehash: false since we're passing already hashed message
     const signature = secp256k1.sign(message, keyPair.privateKey, { prehash: false });
     // DER encoding
-    return this.derEncode(signature.toBytes("compact"));
+    return this.derEncode(signature);
   }
 
   verify(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean {
