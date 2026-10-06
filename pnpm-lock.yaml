@@ -294,8 +294,8 @@ importers:
         specifier: workspace:*
         version: link:../live-env
       '@noble/hashes':
-        specifier: 1.8.0
-        version: 1.8.0
+        specifier: 'catalog:'
+        version: 2.4.0
       axios:
         specifier: 'catalog:'
         version: 1.20.0
