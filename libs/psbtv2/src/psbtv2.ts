@@ -422,7 +422,7 @@ export class PsbtV2 {
   }
 
   private static initializeFromV0(psbtv2: PsbtV2, psbtv0: Psbt, allowTxnVersion1: boolean) {
-    const txVersion = psbtv0.data.getTransaction().readInt32LE(0);
+    const txVersion = Buffer.from(psbtv0.data.getTransaction()).readInt32LE(0);
 
     if (txVersion === 1 && !allowTxnVersion1) {
       throw new Error(
@@ -441,24 +441,24 @@ export class PsbtV2 {
   private static addInputsFromV0(psbtv2: PsbtV2, psbtv0: Psbt, tx: Transaction) {
     for (const [index, input] of psbtv0.data.inputs.entries()) {
       // Required fields for PSBTv2 - get from the embedded transaction
-      psbtv2.setInputPreviousTxId(index, tx.ins[index].hash);
+      psbtv2.setInputPreviousTxId(index, Buffer.from(tx.ins[index].hash));
       psbtv2.setInputOutputIndex(index, tx.ins[index].index);
       psbtv2.setInputSequence(index, tx.ins[index].sequence);
 
       // Optional UTXO information
       if (input.nonWitnessUtxo) {
-        psbtv2.setInputNonWitnessUtxo(index, input.nonWitnessUtxo);
+        psbtv2.setInputNonWitnessUtxo(index, Buffer.from(input.nonWitnessUtxo));
       }
 
       if (input.witnessUtxo) {
         // Convert bitcoinjs-lib format {value, script} to PSBTv2 format {amount, scriptPubKey}
-        const amount = unsafeTo64bitLE(input.witnessUtxo.value);
-        psbtv2.setInputWitnessUtxo(index, amount, input.witnessUtxo.script);
+        const amount = unsafeTo64bitLE(Number(input.witnessUtxo.value));
+        psbtv2.setInputWitnessUtxo(index, amount, Buffer.from(input.witnessUtxo.script));
       }
 
       // Optional scripts and derivation
       if (input.redeemScript) {
-        psbtv2.setInputRedeemScript(index, input.redeemScript);
+        psbtv2.setInputRedeemScript(index, Buffer.from(input.redeemScript));
       }
 
       if (input.sighashType !== undefined) {
@@ -469,8 +469,8 @@ export class PsbtV2 {
         for (const deriv of input.bip32Derivation) {
           psbtv2.setInputBip32Derivation(
             index,
-            deriv.pubkey,
-            deriv.masterFingerprint,
+            Buffer.from(deriv.pubkey),
+            Buffer.from(deriv.masterFingerprint),
             parseBip32Path(deriv.path),
           );
         }
@@ -482,20 +482,20 @@ export class PsbtV2 {
     // Constructor Role - Add outputs
     for (const [index, output] of psbtv0.data.outputs.entries()) {
       // Required fields for PSBTv2 - get from the embedded transaction
-      psbtv2.setOutputAmount(index, tx.outs[index].value);
-      psbtv2.setOutputScript(index, tx.outs[index].script);
+      psbtv2.setOutputAmount(index, Number(tx.outs[index].value));
+      psbtv2.setOutputScript(index, Buffer.from(tx.outs[index].script));
 
       // Optional fields
       if (output.redeemScript) {
-        psbtv2.setOutputRedeemScript(index, output.redeemScript);
+        psbtv2.setOutputRedeemScript(index, Buffer.from(output.redeemScript));
       }
 
       if (output.bip32Derivation) {
         for (const deriv of output.bip32Derivation) {
           psbtv2.setOutputBip32Derivation(
             index,
-            deriv.pubkey,
-            deriv.masterFingerprint,
+            Buffer.from(deriv.pubkey),
+            Buffer.from(deriv.masterFingerprint),
             parseBip32Path(deriv.path),
           );
         }
@@ -507,7 +507,7 @@ export class PsbtV2 {
     for (const [index, input] of psbtv0.data.inputs.entries()) {
       if (input.partialSig) {
         for (const sig of input.partialSig) {
-          psbtv2.setInputPartialSig(index, sig.pubkey, sig.signature);
+          psbtv2.setInputPartialSig(index, Buffer.from(sig.pubkey), Buffer.from(sig.signature));
         }
       }
     }
@@ -519,11 +519,11 @@ export class PsbtV2 {
     // finalization, but we preserve them for compatibility with the source PSBTv0
     for (const [index, input] of psbtv0.data.inputs.entries()) {
       if (input.finalScriptSig) {
-        psbtv2.setInputFinalScriptsig(index, input.finalScriptSig);
+        psbtv2.setInputFinalScriptsig(index, Buffer.from(input.finalScriptSig));
       }
 
       if (input.finalScriptWitness) {
-        psbtv2.setInputFinalScriptwitness(index, input.finalScriptWitness);
+        psbtv2.setInputFinalScriptwitness(index, Buffer.from(input.finalScriptWitness));
       }
     }
   }
