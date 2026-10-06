@@ -1,5 +1,6 @@
 import axios from "axios";
-import SHA224 from "crypto-js/sha224";
+import { sha224 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { getEnv } from "@ledgerhq/live-env";
 import { AddressZero } from "@ethersproject/constants";
 import { _TypedDataEncoder as TypedDataEncoder } from "@ethersproject/hash";
@@ -39,7 +40,7 @@ export const getSchemaHashForMessage = (message: EIP712Message): string => {
   const { types } = message;
   const sortedTypes = sortObjectAlphabetically(types);
 
-  return SHA224(JSON.stringify(sortedTypes).replace(" ", "")).toString();
+  return bytesToHex(sha224(utf8ToBytes(JSON.stringify(sortedTypes).replace(" ", ""))));
 };
 
 /**
