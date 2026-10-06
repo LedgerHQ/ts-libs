@@ -28,8 +28,8 @@ catalogs:
       specifier: 1.9.7
       version: 1.9.7
     '@noble/hashes':
-      specifier: 1.8.0
-      version: 1.8.0
+      specifier: 2.4.0
+      version: 2.4.0
     '@swc/core':
       specifier: 1.16.13
       version: 1.16.13
@@ -341,7 +341,7 @@ importers:
         version: 1.9.7
       '@noble/hashes':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 2.4.0
       bip32:
         specifier: ^4.0.0
         version: 4.0.0
@@ -1509,6 +1509,10 @@ packages:
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@2.4.0':
+    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
+    engines: {node: '>= 20.19.0'}
 
   '@nx/nx-darwin-arm64@23.2.1':
     resolution: {integrity: sha512-majzvZlhlWL8MSDEKbQoGv3qM1u7v8Pk7X86srWsySbGDnCJ5BpMFyqMeroQ3AY4lxRjLYWACX5YXVPy2ttRtQ==}
@@ -5760,6 +5764,8 @@ snapshots:
       '@noble/hashes': 1.8.0
 
   '@noble/hashes@1.8.0': {}
+
+  '@noble/hashes@2.4.0': {}
 
   '@nx/nx-darwin-arm64@23.2.1':
     optional: true
