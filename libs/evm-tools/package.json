@@ -107,13 +107,12 @@
     "@ethersproject/constants": "^5.7.0",
     "@ethersproject/hash": "^5.7.0",
     "@ledgerhq/live-env": "workspace:*",
-    "axios": "catalog:",
-    "crypto-js": "4.2.0"
+    "@noble/hashes": "1.8.0",
+    "axios": "catalog:"
   },
   "devDependencies": {
     "@swc/core": "catalog:",
     "@swc/jest": "catalog:",
-    "@types/crypto-js": "^4.1.1",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "jest": "catalog:",
