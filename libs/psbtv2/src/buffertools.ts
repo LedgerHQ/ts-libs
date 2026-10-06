@@ -1,4 +1,4 @@
-import varuint from "varuint-bitcoin";
+import { decode, encode } from "varuint-bitcoin";
 
 export function unsafeTo64bitLE(n: number): Buffer {
   // we want to represent the input as a 8-bytes array
@@ -58,7 +58,7 @@ export class BufferWriter {
   }
 
   writeVarInt(i: number): void {
-    this.bufs.push(varuint.encode(i));
+    this.bufs.push(Buffer.from(encode(i).buffer));
   }
 
   writeSlice(slice: Buffer): void {
@@ -110,9 +110,12 @@ export class BufferReader {
   }
 
   readVarInt(): number {
-    const vi = varuint.decode(this.buffer, this.offset);
-    this.offset += varuint.decode.bytes;
-    return vi;
+    const { numberValue, bytes } = decode(this.buffer, this.offset);
+    if (numberValue === null) {
+      throw new Error("VarInt exceeds MAX_SAFE_INTEGER");
+    }
+    this.offset += bytes;
+    return numberValue;
   }
 
   readSlice(n: number): Buffer {
