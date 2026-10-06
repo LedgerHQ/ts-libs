@@ -243,7 +243,7 @@ export class NobleCryptoSecp256k1 implements Crypto {
     }
   }
 
-  private to_array(buffer: Buffer): Uint8Array {
+  private to_array(buffer: Uint8Array): Uint8Array {
     return new Uint8Array(buffer);
   }
 
