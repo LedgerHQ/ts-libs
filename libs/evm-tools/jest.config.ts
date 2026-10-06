@@ -1,10 +1,11 @@
 export default {
   transform: {
-    "^.+\\.(ts|tsx)$": [
+    "^.+\\.(ts|tsx|js)$": [
       "@swc/jest",
       { jsc: { target: "es2022", parser: { syntax: "typescript" } } },
     ],
   },
+  transformIgnorePatterns: ["/node_modules/(?!(\\.pnpm/)?@noble)"],
   testEnvironment: "node",
   setupFiles: ["<rootDir>/jest-env-setup.js"],
   testRegex: ".(test|spec).[jt]sx?$",

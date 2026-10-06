@@ -2,12 +2,14 @@ import axios from "axios";
 import {
   getEIP712FieldsDisplayedOnNano,
   getFiltersForMessage,
+  getSchemaHashForMessage,
   isEIP712Message,
   sortObjectAlphabetically,
 } from "../../../message/EIP712/index";
 import { dynamicCAL, messageNotInCAL, messageNotInCALSchemaHash } from "../../fixtures/dynamicCAL";
 import complexMessage from "../../fixtures/messages/5.json";
 import messageInCAL from "../../fixtures/messages/2.json";
+import type { EIP712Message } from "../../../message/EIP712/types";
 
 const CAL = jest.requireActual("../../fixtures/CAL").default;
 
@@ -183,6 +185,32 @@ describe("evm-tools", () => {
           };
 
           expect(sortObjectAlphabetically(obj)).toEqual(expectedObj);
+        });
+      });
+
+      describe("getSchemaHashForMessage", () => {
+        it.each([
+          ["fixture 2", messageInCAL, "d8e4f2bd77f7562e99ea5df4adb127291a2bfbc225ae55450038f27f"],
+          ["fixture 5", complexMessage, "e30e691e8ad018c90b84c64217c2e4abfe9881d27bcd0f8dd999f6b4"],
+          ["message not in CAL", messageNotInCAL, messageNotInCALSchemaHash],
+        ])(
+          "should return the SHA224 hex digest of the sorted types for %s",
+          (_name, message, hash) => {
+            expect(getSchemaHashForMessage(message as unknown as EIP712Message)).toBe(hash);
+          },
+        );
+
+        it("should hash non-ASCII types as UTF-8 and strip only the first space", () => {
+          const message = {
+            types: {
+              "Zeta é": [{ name: "a b", type: "string" }],
+              "Alpha 😀": [{ name: "x", type: "uint256" }],
+            },
+          } as unknown as EIP712Message;
+
+          expect(getSchemaHashForMessage(message)).toBe(
+            "1877ae4da38f2b76d5254ea75398d488ae595f12c7db7d38d1141acb",
+          );
         });
       });
 
