@@ -43,7 +43,6 @@ catalog:
   "@ledgerhq/device-management-kit": "1.10.0"
   "@ledgerhq/device-transport-kit-speculos": "1.2.1"
   "@ledgerhq/speculos-device-controller": "0.3.0"
-  "@reduxjs/toolkit": "2.11.2"
   isomorphic-ws: "5.0.0"
   ws: "8.22.0"
   expect: "30.5.2"
