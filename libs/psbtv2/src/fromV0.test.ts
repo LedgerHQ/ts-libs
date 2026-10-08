@@ -21,7 +21,7 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
         sequence: 0xfffffffd,
       });
@@ -29,11 +29,11 @@ describe("PsbtV2.fromV0", () => {
       // Add output
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
       // Convert to PSBTv2
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       // Verify global fields
       expect(psbtv2.getGlobalTxVersion()).toBe(2);
@@ -65,16 +65,16 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       expect(psbtv2.getGlobalFallbackLocktime()).toBe(500000);
     });
@@ -88,16 +88,16 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      expect(() => PsbtV2.fromV0(psbtv0.toBuffer())).toThrow(
+      expect(() => PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()))).toThrow(
         /Transaction version 1 detected.*allowTxnVersion1=true/,
       );
     });
@@ -110,16 +110,16 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const buffer = psbtv0.toBuffer();
+      const buffer = Buffer.from(psbtv0.toBuffer());
       const psbtv2 = PsbtV2.fromV0(buffer, true);
 
       expect(psbtv2.getGlobalInputCount()).toBe(1);
@@ -138,7 +138,7 @@ describe("PsbtV2.fromV0", () => {
           index: i,
           witnessUtxo: {
             script: Buffer.from("0014" + "00".repeat(20), "hex"),
-            value: 100000 + i * 10000,
+            value: 100000n + BigInt(i) * 10000n,
           },
           sequence: 0xffffffff - i,
         });
@@ -146,10 +146,10 @@ describe("PsbtV2.fromV0", () => {
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 300000,
+        value: 300000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       expect(psbtv2.getGlobalInputCount()).toBe(3);
 
@@ -169,7 +169,7 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 500000,
+          value: 500000n,
         },
       });
 
@@ -177,11 +177,11 @@ describe("PsbtV2.fromV0", () => {
       for (let i = 0; i < 3; i++) {
         psbtv0.addOutput({
           script: Buffer.from("0014" + Buffer.alloc(20, i).toString("hex"), "hex"),
-          value: 100000 + i * 10000,
+          value: 100000n + BigInt(i) * 10000n,
         });
       }
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       expect(psbtv2.getGlobalOutputCount()).toBe(3);
 
@@ -201,16 +201,16 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script,
-          value: 123456,
+          value: 123456n,
         },
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 100000,
+        value: 100000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const witnessUtxo = psbtv2.getInputWitnessUtxo(0);
       expect(witnessUtxo).toBeDefined();
@@ -244,10 +244,10 @@ describe("PsbtV2.fromV0", () => {
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const nonWitnessUtxo = psbtv2.getInputNonWitnessUtxo(0);
       expect(nonWitnessUtxo).toBeDefined();
@@ -266,17 +266,17 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("a914" + "00".repeat(20) + "87", "hex"), // P2SH
-          value: 100000,
+          value: 100000n,
         },
         redeemScript,
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const convertedRedeemScript = psbtv2.getInputRedeemScript(0);
       expect(convertedRedeemScript).toBeDefined();
@@ -291,17 +291,17 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
         sighashType: 0x03, // SIGHASH_SINGLE
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const sighashType = psbtv2.getInputSighashType(0);
       expect(sighashType).toBe(0x03);
@@ -318,7 +318,7 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
         bip32Derivation: [
           {
@@ -331,10 +331,10 @@ describe("PsbtV2.fromV0", () => {
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const deriv = psbtv2.getInputBip32Derivation(0, pubkey);
       expect(deriv).toBeDefined();
@@ -359,13 +359,13 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
         bip32Derivation: [
           {
             masterFingerprint,
@@ -375,7 +375,7 @@ describe("PsbtV2.fromV0", () => {
         ],
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const deriv = psbtv2.getOutputBip32Derivation(0, pubkey);
       expect(deriv).toBeDefined();
@@ -397,7 +397,7 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
       });
 
@@ -405,11 +405,11 @@ describe("PsbtV2.fromV0", () => {
 
       psbtv0.addOutput({
         script: Buffer.from("a914" + "11".repeat(20) + "87", "hex"),
-        value: 90000,
+        value: 90000n,
         redeemScript,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const outRedeemScript = psbtv2.getOutputRedeemScript(0);
       expect(outRedeemScript).toEqual(redeemScript);
@@ -434,19 +434,19 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: p2wpkh.output!,
-          value: 100000,
+          value: 100000n,
         },
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
       // Actually sign the input
       psbtv0.signInput(0, signer);
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       // Verify the signature was transferred
       const partialSig = psbtv2.getInputPartialSig(0, pubkey);
@@ -483,10 +483,10 @@ describe("PsbtV2.fromV0", () => {
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const scriptSig = psbtv2.getInputFinalScriptsig(0);
       expect(scriptSig).toBeDefined();
@@ -510,17 +510,17 @@ describe("PsbtV2.fromV0", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
         finalScriptWitness,
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       const scriptWitness = psbtv2.getInputFinalScriptwitness(0);
       expect(scriptWitness).toBeDefined();
@@ -540,17 +540,17 @@ describe("PsbtV2.fromV0", () => {
         index: 7,
         witnessUtxo: {
           script: Buffer.from("0014" + "cc".repeat(20), "hex"),
-          value: 250000,
+          value: 250000n,
         },
         sequence: 0xfffffffe,
       });
 
       psbtv0.addOutput({
         script: Buffer.from("0014" + "dd".repeat(20), "hex"),
-        value: 240000,
+        value: 240000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
 
       // Serialize and deserialize
       const serialized = psbtv2.serialize();

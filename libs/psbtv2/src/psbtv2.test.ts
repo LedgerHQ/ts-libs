@@ -37,15 +37,15 @@ describe("PsbtV2", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
       });
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const buffer = psbtv0.toBuffer();
+      const buffer = Buffer.from(psbtv0.toBuffer());
       const version = PsbtV2.getPsbtVersionNumber(buffer);
 
       expect(version).toBe(0);
@@ -59,15 +59,15 @@ describe("PsbtV2", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("001400000000000000000000000000000000000000000000", "hex"),
-          value: 1000,
+          value: 1000n,
         },
       });
       psbtv0.addOutput({
         script: Buffer.from("001400000000000000000000000000000000000000000000", "hex"),
-        value: 900,
+        value: 900n,
       });
 
-      const buffer = psbtv0.toBuffer();
+      const buffer = Buffer.from(psbtv0.toBuffer());
       const version = PsbtV2.getPsbtVersionNumber(buffer);
 
       expect(version).toBe(0);
@@ -81,15 +81,15 @@ describe("PsbtV2", () => {
         index: 0,
         witnessUtxo: {
           script: Buffer.from("0014" + "00".repeat(20), "hex"),
-          value: 100000,
+          value: 100000n,
         },
       });
       psbtv0.addOutput({
         script: Buffer.from("0014" + "11".repeat(20), "hex"),
-        value: 90000,
+        value: 90000n,
       });
 
-      const psbtv2 = PsbtV2.fromV0(psbtv0.toBuffer(), true);
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
       const buffer = psbtv2.serialize();
       const version = PsbtV2.getPsbtVersionNumber(buffer);
 
