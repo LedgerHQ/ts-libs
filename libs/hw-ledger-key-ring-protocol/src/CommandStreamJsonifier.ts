@@ -11,7 +11,7 @@ import {
 } from "./CommandBlock";
 import { DerivationPath } from "./Crypto";
 import { CommandStreamEncoder } from "./CommandStreamEncoder";
-import { sha256 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2.js";
 
 export default class CommandStreamJsonifier {
   private static jsonifyCommand(command: Command): object {

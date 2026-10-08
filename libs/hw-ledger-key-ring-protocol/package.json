@@ -1,6 +1,6 @@
 {
   "name": "@ledgerhq/hw-ledger-key-ring-protocol",
-  "version": "0.14.0",
+  "version": "1.0.0",
   "description": "Ledger Key Ring Protocol hardware layer",
   "keywords": [
     "Ledger"
@@ -19,7 +19,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@ledgerhq/hw-transport": "workspace:*",
-    "bip32": "^4.0.0",
+    "bip32": "^5.0.1",
     "@noble/ciphers": "catalog:",
     "@noble/curves": "catalog:",
     "@noble/hashes": "catalog:"
