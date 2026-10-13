@@ -40,7 +40,7 @@ catalog:
   "@noble/ciphers": "2.4.0"
   "@noble/curves": "2.4.0"
   "@noble/hashes": "2.4.0"
-  "@ledgerhq/device-management-kit": "1.10.0"
+  "@ledgerhq/device-management-kit": "1.11.0"
   "@ledgerhq/device-transport-kit-speculos": "1.2.1"
   "@ledgerhq/speculos-device-controller": "0.3.0"
   isomorphic-ws: "5.0.0"

@@ -13,8 +13,8 @@ catalogs:
       specifier: 21.2.3
       version: 21.2.3
     '@ledgerhq/device-management-kit':
-      specifier: 1.10.0
-      version: 1.10.0
+      specifier: 1.11.0
+      version: 1.11.0
     '@ledgerhq/device-transport-kit-speculos':
       specifier: 1.2.1
       version: 1.2.1
@@ -480,10 +480,10 @@ importers:
     devDependencies:
       '@ledgerhq/device-management-kit':
         specifier: 'catalog:'
-        version: 1.10.0(rxjs@7.8.2)
+        version: 1.11.0(rxjs@7.8.2)
       '@ledgerhq/device-transport-kit-speculos':
         specifier: 'catalog:'
-        version: 1.2.1(@ledgerhq/device-management-kit@1.10.0(rxjs@7.8.2))(rxjs@7.8.2)
+        version: 1.2.1(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))(rxjs@7.8.2)
       '@ledgerhq/devices':
         specifier: workspace:*
         version: link:../devices
@@ -492,7 +492,7 @@ importers:
         version: link:../hw-transport-mocker
       '@ledgerhq/speculos-device-controller':
         specifier: 'catalog:'
-        version: 0.3.0(@ledgerhq/device-management-kit@1.10.0(rxjs@7.8.2))
+        version: 0.3.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))
       '@swc/core':
         specifier: 'catalog:'
         version: 1.16.13
@@ -1453,8 +1453,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@ledgerhq/device-management-kit@1.10.0':
-    resolution: {integrity: sha512-WOJbAXI54a4wgegb10RzQD4eJVwWcVkvnVsAh3KH45EkI1/N4Z7pjbab75OOF7AhtwjDwN5JGdOCqjxPXptY4g==}
+  '@ledgerhq/device-management-kit@1.11.0':
+    resolution: {integrity: sha512-1KAC6tmtLZz+9X0KQY0lukzEAXgIDoMM3LP0pTRh9/Rab/NmZv5+74R9coL2mYTnDQTp8EfR41uJLJ5FylRCug==}
     peerDependencies:
       rxjs: 7.8.2
 
@@ -5579,7 +5579,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@ledgerhq/device-management-kit@1.10.0(rxjs@7.8.2)':
+  '@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2)':
     dependencies:
       '@noble/hashes': 1.8.0
       '@sentry/minimal': 6.19.7
@@ -5596,16 +5596,16 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@ledgerhq/device-transport-kit-speculos@1.2.1(@ledgerhq/device-management-kit@1.10.0(rxjs@7.8.2))(rxjs@7.8.2)':
+  '@ledgerhq/device-transport-kit-speculos@1.2.1(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
-      '@ledgerhq/device-management-kit': 1.10.0(rxjs@7.8.2)
+      '@ledgerhq/device-management-kit': 1.11.0(rxjs@7.8.2)
       '@sentry/minimal': 6.19.7
       purify-ts: 2.1.0
       rxjs: 7.8.2
 
-  '@ledgerhq/speculos-device-controller@0.3.0(@ledgerhq/device-management-kit@1.10.0(rxjs@7.8.2))':
+  '@ledgerhq/speculos-device-controller@0.3.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))':
     dependencies:
-      '@ledgerhq/device-management-kit': 1.10.0(rxjs@7.8.2)
+      '@ledgerhq/device-management-kit': 1.11.0(rxjs@7.8.2)
       '@sentry/minimal': 6.19.7
 
   '@manypkg/find-root@3.1.0':
