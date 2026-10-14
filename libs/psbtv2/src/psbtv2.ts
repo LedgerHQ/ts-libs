@@ -411,6 +411,7 @@ export class PsbtV2 {
     const tx = Transaction.fromBuffer(txBuffer);
     PsbtV2.addInputsFromV0(psbtv2, psbtv0, tx);
     PsbtV2.addOutputsFromV0(psbtv2, psbtv0, tx);
+    PsbtV2.transferUnknownKeyVals(psbtv2, psbtv0);
 
     // Signer Role - Transfer partial signatures
     PsbtV2.transferPartialSignatures(psbtv2, psbtv0);
@@ -501,6 +502,19 @@ export class PsbtV2 {
         }
       }
     }
+  }
+
+  // Proprietary (0xFC) and other key types bitcoinjs-lib does not model land in unknownKeyVals.
+  // They are part of what the signer commits to, so dropping them changes the PSBT. A key the
+  // conversion already wrote is never overwritten.
+  private static transferUnknownKeyVals(psbtv2: PsbtV2, psbtv0: Psbt) {
+    transferKeyVals(psbtv2.globalMap, psbtv0.data.globalMap.unknownKeyVals);
+    psbtv0.data.inputs.forEach((input, index) =>
+      transferKeyVals(psbtv2.getMap(index, psbtv2.inputMaps), input.unknownKeyVals),
+    );
+    psbtv0.data.outputs.forEach((output, index) =>
+      transferKeyVals(psbtv2.getMap(index, psbtv2.outputMaps), output.unknownKeyVals),
+    );
   }
 
   private static transferPartialSignatures(psbtv2: PsbtV2, psbtv0: Psbt) {
@@ -694,6 +708,17 @@ class KeyPair {
 function createKey(buf: Buffer): Key {
   return new Key(buf.readUInt8(0), buf.subarray(1));
 }
+function transferKeyVals(
+  to: Map<string, Buffer>,
+  entries: { key: Uint8Array; value: Uint8Array }[] | undefined,
+) {
+  for (const { key, value } of entries ?? []) {
+    if (key.length === 0) continue;
+    const k = new Key(key[0], Buffer.from(key.subarray(1))).toString();
+    if (!to.has(k)) to.set(k, Buffer.from(value));
+  }
+}
+
 function serializeMap(buf: BufferWriter, map: Map<string, Buffer>) {
   for (const k of map.keys()) {
     const value = map.get(k)!;

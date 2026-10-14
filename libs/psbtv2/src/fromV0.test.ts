@@ -5,6 +5,25 @@ import { PsbtV2 } from "./psbtv2";
 
 const ECPair = ECPairFactory(ecc);
 
+const proprietaryKey = Buffer.from("fc05" + Buffer.from("hashi").toString("hex") + "00", "hex");
+const proprietaryValue = Buffer.from("11".repeat(32), "hex");
+
+function encodeKeyPair(key: Buffer, value: Buffer): Buffer {
+  return Buffer.concat([Buffer.from([key.length]), key, Buffer.from([value.length]), value]);
+}
+
+function buildPsbtv0(): Psbt {
+  const psbtv0 = new Psbt({ network: networks.testnet });
+  psbtv0.addInput({
+    hash: Buffer.from("01".repeat(32), "hex"),
+    index: 0,
+    witnessUtxo: { script: Buffer.from("0014" + "00".repeat(20), "hex"), value: 100000n },
+  });
+  psbtv0.addOutput({ script: Buffer.from("5120" + "22".repeat(32), "hex"), value: 60000n });
+  psbtv0.addOutput({ script: Buffer.from("0014" + "11".repeat(20), "hex"), value: 39000n });
+  return psbtv0;
+}
+
 describe("PsbtV2.fromV0", () => {
   describe("Basic Conversion", () => {
     it("should convert a simple PSBTv0 with one P2WPKH input and output", () => {
@@ -563,6 +582,57 @@ describe("PsbtV2.fromV0", () => {
       expect(psbtv2Copy.getInputOutputIndex(0)).toBe(7);
       expect(psbtv2Copy.getInputSequence(0)).toBe(0xfffffffe);
       expect(psbtv2Copy.getOutputAmount(0)).toBe(240000);
+    });
+  });
+
+  describe("Unknown and Proprietary Keys", () => {
+    it("should keep a proprietary output field byte for byte", () => {
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: proprietaryValue });
+
+      const serialized = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+      const psbtv2 = new PsbtV2();
+      psbtv2.deserialize(serialized);
+
+      expect(serialized.includes(encodeKeyPair(proprietaryKey, proprietaryValue))).toBe(true);
+      expect(psbtv2.serialize()).toEqual(serialized);
+      expect(psbtv2.getOutputAmount(0)).toBe(60000);
+      expect(psbtv2.getOutputScript(0).toString("hex")).toBe("5120" + "22".repeat(32));
+    });
+
+    it("should keep the field on its own output only", () => {
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToOutput(1, { key: proprietaryKey, value: proprietaryValue });
+
+      const withField = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+      const withoutField = PsbtV2.fromV0(Buffer.from(buildPsbtv0().toBuffer()), true).serialize();
+
+      expect(withField.length - withoutField.length).toBe(
+        encodeKeyPair(proprietaryKey, proprietaryValue).length,
+      );
+      expect(
+        withField.lastIndexOf(encodeKeyPair(proprietaryKey, proprietaryValue)),
+      ).toBeGreaterThan(withField.indexOf(Buffer.from("5120" + "22".repeat(32), "hex")));
+    });
+
+    it("should keep unknown global and input keys", () => {
+      const globalKey = Buffer.from("fc04746573740001", "hex");
+      const inputKey = Buffer.from("fc0474657374000a", "hex");
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToGlobal({ key: globalKey, value: Buffer.from("aa", "hex") });
+      psbtv0.addUnknownKeyValToInput(0, { key: inputKey, value: Buffer.from("bb", "hex") });
+
+      const serialized = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+
+      expect(serialized.includes(encodeKeyPair(globalKey, Buffer.from("aa", "hex")))).toBe(true);
+      expect(serialized.includes(encodeKeyPair(inputKey, Buffer.from("bb", "hex")))).toBe(true);
+    });
+
+    it("should add no key when the PSBTv0 has no unknown keys", () => {
+      const psbtv0 = buildPsbtv0();
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
+      expect(psbtv2.getGlobalOutputCount()).toBe(2);
+      expect(psbtv2.serialize().includes(proprietaryKey)).toBe(false);
     });
   });
 });
