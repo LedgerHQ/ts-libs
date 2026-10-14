@@ -615,7 +615,7 @@ describe("PsbtV2.fromV0", () => {
       ).toBeGreaterThan(withField.indexOf(Buffer.from("5120" + "22".repeat(32), "hex")));
     });
 
-    it("should keep unknown global and input keys", () => {
+    it("should drop proprietary global and input keys", () => {
       const globalKey = Buffer.from("fc04746573740001", "hex");
       const inputKey = Buffer.from("fc0474657374000a", "hex");
       const psbtv0 = buildPsbtv0();
@@ -623,9 +623,25 @@ describe("PsbtV2.fromV0", () => {
       psbtv0.addUnknownKeyValToInput(0, { key: inputKey, value: Buffer.from("bb", "hex") });
 
       const serialized = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+      const withoutKeys = PsbtV2.fromV0(Buffer.from(buildPsbtv0().toBuffer()), true).serialize();
 
-      expect(serialized.includes(encodeKeyPair(globalKey, Buffer.from("aa", "hex")))).toBe(true);
-      expect(serialized.includes(encodeKeyPair(inputKey, Buffer.from("bb", "hex")))).toBe(true);
+      expect(serialized).toEqual(withoutKeys);
+    });
+
+    it("should drop a non-proprietary unknown output key", () => {
+      // PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS (0x08) followed by a 33-byte aggregate key.
+      const musig2Key = Buffer.from("0802" + "33".repeat(32), "hex");
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToOutput(0, {
+        key: musig2Key,
+        value: Buffer.from("02" + "44".repeat(32), "hex"),
+      });
+      psbtv0.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: proprietaryValue });
+
+      const serialized = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+
+      expect(serialized.includes(musig2Key)).toBe(false);
+      expect(serialized.includes(encodeKeyPair(proprietaryKey, proprietaryValue))).toBe(true);
     });
 
     it("should add no key when the PSBTv0 has no unknown keys", () => {
