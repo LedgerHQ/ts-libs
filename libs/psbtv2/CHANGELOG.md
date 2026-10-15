@@ -1,5 +1,11 @@
 # @ledgerhq/psbtv2
 
+## 0.6.1
+
+### Patch Changes
+
+- [#138](https://github.com/LedgerHQ/ts-libs/pull/138) [`cf35422`](https://github.com/LedgerHQ/ts-libs/commit/cf35422e59b1076004f504286b244f44dc535d15) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Bump `bitcoinjs-lib` to v7 and `varuint-bitcoin` to v2 (Uint8Array-based); public API and types are unchanged
+
 ## 0.6.0
 
 ### Minor Changes
