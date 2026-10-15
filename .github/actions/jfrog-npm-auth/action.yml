@@ -9,7 +9,7 @@ runs:
   steps:
     - id: jfrog-login
       if: ${{ inputs.registry != '' }}
-      uses: LedgerHQ/actions-security/actions/jfrog-login@actions/jfrog-login-1.4.0
+      uses: LedgerHQ/actions-security/actions/jfrog-login@5e1e158bc84b65cd0cb3b5b28733c3066ea93ed8 # actions/jfrog-login-1.4.1
     - id: jfrog-npm
       if: ${{ inputs.registry != '' }}
       uses: LedgerHQ/actions-security/actions/jfrog-npm@actions/jfrog-npm-0.3.0
