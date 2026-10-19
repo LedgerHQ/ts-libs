@@ -16,8 +16,8 @@ catalogs:
       specifier: 1.11.0
       version: 1.11.0
     '@ledgerhq/device-transport-kit-speculos':
-      specifier: 1.2.1
-      version: 1.2.1
+      specifier: 1.3.0
+      version: 1.3.0
     '@ledgerhq/speculos-device-controller':
       specifier: 0.4.0
       version: 0.4.0
@@ -483,7 +483,7 @@ importers:
         version: 1.11.0(rxjs@7.8.2)
       '@ledgerhq/device-transport-kit-speculos':
         specifier: 'catalog:'
-        version: 1.2.1(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))(rxjs@7.8.2)
+        version: 1.3.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))(rxjs@7.8.2)
       '@ledgerhq/devices':
         specifier: workspace:*
         version: link:../devices
@@ -1459,10 +1459,10 @@ packages:
     peerDependencies:
       rxjs: 7.8.2
 
-  '@ledgerhq/device-transport-kit-speculos@1.2.1':
-    resolution: {integrity: sha512-lowqaGWtum+KrLgayz5Fu35Ep0AgtBMKo9FJoQ82ilNGli/PxSa4RqLLeWh/+L3CQtpyW8/89pBqSURQyldaYw==}
+  '@ledgerhq/device-transport-kit-speculos@1.3.0':
+    resolution: {integrity: sha512-v3m+W4zOhaRRgelh3fXgX2gOBFKcUP66R6dgGK18cAY9IYtpamRARu0GWsZeUjBtXf/SOuGDpEVkkE/mviCjdg==}
     peerDependencies:
-      '@ledgerhq/device-management-kit': ^1.5.1
+      '@ledgerhq/device-management-kit': ^1.11.0
       rxjs: 7.8.2
 
   '@ledgerhq/speculos-device-controller@0.4.0':
@@ -5579,7 +5579,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@ledgerhq/device-transport-kit-speculos@1.2.1(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))(rxjs@7.8.2)':
+  '@ledgerhq/device-transport-kit-speculos@1.3.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
       '@ledgerhq/device-management-kit': 1.11.0(rxjs@7.8.2)
       '@sentry/minimal': 6.19.7
