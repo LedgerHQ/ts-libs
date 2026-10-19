@@ -55,8 +55,8 @@ catalogs:
       specifier: 26.6.5
       version: 26.6.5
     '@types/react':
-      specifier: 19.0.14
-      version: 19.0.14
+      specifier: 19.3.0
+      version: 19.3.0
     '@types/semver':
       specifier: 7.7.1
       version: 7.7.1
@@ -94,8 +94,8 @@ catalogs:
       specifier: 1.87.0
       version: 1.87.0
     react:
-      specifier: 19.1.4
-      version: 19.1.4
+      specifier: 19.3.1
+      version: 19.3.1
     react-dom:
       specifier: 19.1.4
       version: 19.1.4
@@ -247,7 +247,7 @@ importers:
         version: 7.0.1(@testing-library/dom@10.4.2)
       '@testing-library/react':
         specifier: 'catalog:'
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react@19.3.0)(react-dom@19.1.4(react@19.3.1))(react@19.3.1)
       '@types/jest':
         specifier: 'catalog:'
         version: 30.0.0
@@ -256,7 +256,7 @@ importers:
         version: 26.6.5
       '@types/react':
         specifier: 'catalog:'
-        version: 19.0.14
+        version: 19.3.0
       jest:
         specifier: 'catalog:'
         version: 30.5.2(@types/node@26.6.5)(ts-node@10.9.2(@swc/core@1.16.13)(@types/node@26.6.5)(typescript@7.0.2))
@@ -271,13 +271,13 @@ importers:
         version: 1.87.0
       react:
         specifier: 'catalog:'
-        version: 19.1.4
+        version: 19.3.1
       react-dom:
         specifier: 'catalog:'
-        version: 19.1.4(react@19.1.4)
+        version: 19.1.4(react@19.3.1)
       react-test-renderer:
         specifier: 'catalog:'
-        version: 19.1.4(react@19.1.4)
+        version: 19.1.4(react@19.3.1)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -2365,8 +2365,8 @@ packages:
   '@types/node@26.6.5':
     resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
 
-  '@types/react@19.0.14':
-    resolution: {integrity: sha512-ixLZ7zG7j1fM0DijL9hDArwhwcCb4vqmePgwtV0GfnkHRSCUEv4LvzarcTdhoqgyMznUx/EhoTUv31CKZzkQlw==}
+  '@types/react@19.3.0':
+    resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
 
   '@types/semver@7.7.1':
     resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
@@ -4041,8 +4041,8 @@ packages:
     peerDependencies:
       react: ^19.1.4
 
-  react@19.1.4:
-    resolution: {integrity: sha512-DHINL3PAmPUiK1uszfbKiXqfE03eszdt5BpVSuEAHb5nfmNPwnsy7g39h2t8aXFc/Bv99GH81s+j8dobtD+jOw==}
+  react@19.3.1:
+    resolution: {integrity: sha512-QNhWdt7nrgVWWQG58QuGsAR3jv3Hbe4mb4vz7w2csnHavciZJgda1CPNaldF6eVxv90ud3jUXpKlHL69gO38yw==}
     engines: {node: '>=0.10.0'}
 
   readable-stream@3.6.2:
@@ -6103,14 +6103,14 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react@19.0.14)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
+  '@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react@19.3.0)(react-dom@19.1.4(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@babel/runtime': 7.29.7
       '@testing-library/dom': 10.4.2
-      react: 19.1.4
-      react-dom: 19.1.4(react@19.1.4)
+      react: 19.3.1
+      react-dom: 19.1.4(react@19.3.1)
     optionalDependencies:
-      '@types/react': 19.0.14
+      '@types/react': 19.3.0
 
   '@tsconfig/node10@1.0.13': {}
 
@@ -6183,7 +6183,7 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
-  '@types/react@19.0.14':
+  '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.3
 
@@ -8057,9 +8057,9 @@ snapshots:
 
   querystringify@2.2.0: {}
 
-  react-dom@19.1.4(react@19.1.4):
+  react-dom@19.1.4(react@19.3.1):
     dependencies:
-      react: 19.1.4
+      react: 19.3.1
       scheduler: 0.26.0
 
   react-is@17.0.2: {}
@@ -8068,13 +8068,13 @@ snapshots:
 
   react-is@19.2.7: {}
 
-  react-test-renderer@19.1.4(react@19.1.4):
+  react-test-renderer@19.1.4(react@19.3.1):
     dependencies:
-      react: 19.1.4
+      react: 19.3.1
       react-is: 19.2.7
       scheduler: 0.26.0
 
-  react@19.1.4: {}
+  react@19.3.1: {}
 
   readable-stream@3.6.2:
     dependencies:
