@@ -732,8 +732,8 @@ importers:
   libs/psbtv2:
     dependencies:
       bitcoinjs-lib:
-        specifier: ^7.0.2
-        version: 7.0.2(typescript@7.0.2)
+        specifier: ^7.0.4
+        version: 7.0.4(typescript@7.0.2)
       varuint-bitcoin:
         specifier: ^2.0.1
         version: 2.0.1
@@ -2777,8 +2777,8 @@ packages:
   bip39@3.1.2:
     resolution: {integrity: sha512-inxKLEH+Weos8f5rBYNKuOrpOIcNWtKnrLur9x72s4Cb8w4Mm0jJktUPkev7+1pQuivxFqkiut9+AcrwunLHxA==}
 
-  bitcoinjs-lib@7.0.2:
-    resolution: {integrity: sha512-ugLk9SR+2gvhpNA7kqQL1eVDKyBNo/rbr+df72nrZj4OOdZvQRHDVtyogPGXAU2MLQimLL7EbUdz95QGh6Th5Q==}
+  bitcoinjs-lib@7.0.4:
+    resolution: {integrity: sha512-aAPVW36PHKDodJbLMdKQiuPAmXt50BQPBQUvyZWZRYFI8lkdg8EqcklmT1t8X6izAJ74rhaHuOOqkbVlDtJrPg==}
     engines: {node: '>=18.0.0'}
 
   bl@4.1.0:
@@ -4361,10 +4361,6 @@ packages:
 
   uint8array-tools@0.0.8:
     resolution: {integrity: sha512-xS6+s8e0Xbx++5/0L+yyexukU7pz//Yg6IHg3BKhXotg1JcYtgxVcUctQ0HxLByiJzpAkNFawz1Nz5Xadzo82g==}
-    engines: {node: '>=14.0.0'}
-
-  uint8array-tools@0.0.9:
-    resolution: {integrity: sha512-9vqDWmoSXOoi+K14zNaf6LBV51Q8MayF0/IiQs3GlygIKUYtog603e6virExkjjFosfJUBI4LhbQK1iq8IG11A==}
     engines: {node: '>=14.0.0'}
 
   unbash@5.0.0:
@@ -6503,13 +6499,13 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
-  bitcoinjs-lib@7.0.2(typescript@7.0.2):
+  bitcoinjs-lib@7.0.4(typescript@7.0.2):
     dependencies:
       '@noble/hashes': 1.8.0
       bech32: 2.0.0
       bip174: 3.0.1
       bs58check: 4.0.0
-      uint8array-tools: 0.0.9
+      uint8array-tools: 0.0.10
       valibot: 1.5.0(typescript@7.0.2)
       varuint-bitcoin: 2.0.1
     transitivePeerDependencies:
@@ -8361,8 +8357,6 @@ snapshots:
   uint8array-tools@0.0.10: {}
 
   uint8array-tools@0.0.8: {}
-
-  uint8array-tools@0.0.9: {}
 
   unbash@5.0.0: {}
 
