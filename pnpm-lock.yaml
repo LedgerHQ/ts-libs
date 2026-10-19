@@ -100,8 +100,8 @@ catalogs:
       specifier: 19.1.4
       version: 19.1.4
     react-test-renderer:
-      specifier: 19.1.4
-      version: 19.1.4
+      specifier: 19.3.1
+      version: 19.3.1
     rxjs:
       specifier: 7.8.2
       version: 7.8.2
@@ -277,7 +277,7 @@ importers:
         version: 19.1.4(react@19.1.4)
       react-test-renderer:
         specifier: 'catalog:'
-        version: 19.1.4(react@19.1.4)
+        version: 19.3.1(react@19.1.4)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -4036,10 +4036,13 @@ packages:
   react-is@19.2.7:
     resolution: {integrity: sha512-kZFnouyVv7eP/Phmrlo9FK+zcAdriZJvzxXHF1Sl1P377WSGe2G/JxVolhTrB/jeV47lKImhNUsijjHAAbcl/A==}
 
-  react-test-renderer@19.1.4:
-    resolution: {integrity: sha512-dmcR2lSwouaNJKNRd53eeZHuWjF4YYZIq/q6wLiVz50ENrkU/Pds+pS+4XyJ/nwWmjA1ZhHxAp+vfR8A9PEcYQ==}
+  react-is@19.3.1:
+    resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
+
+  react-test-renderer@19.3.1:
+    resolution: {integrity: sha512-YcNewwmnZMd0wTb2nkb4hQ58NmX/u1hW2OJsNpen8CnV+jNkmEjYd1R6wJrOMSgb8bIF5HAJv4iL+S3PwNptOA==}
     peerDependencies:
-      react: ^19.1.4
+      react: ^19.3.1
 
   react@19.1.4:
     resolution: {integrity: sha512-DHINL3PAmPUiK1uszfbKiXqfE03eszdt5BpVSuEAHb5nfmNPwnsy7g39h2t8aXFc/Bv99GH81s+j8dobtD+jOw==}
@@ -4116,6 +4119,9 @@ packages:
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
+
+  scheduler@0.28.0:
+    resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -8068,11 +8074,13 @@ snapshots:
 
   react-is@19.2.7: {}
 
-  react-test-renderer@19.1.4(react@19.1.4):
+  react-is@19.3.1: {}
+
+  react-test-renderer@19.3.1(react@19.1.4):
     dependencies:
       react: 19.1.4
-      react-is: 19.2.7
-      scheduler: 0.26.0
+      react-is: 19.3.1
+      scheduler: 0.28.0
 
   react@19.1.4: {}
 
@@ -8131,6 +8139,8 @@ snapshots:
       xmlchars: 2.2.0
 
   scheduler@0.26.0: {}
+
+  scheduler@0.28.0: {}
 
   semver@6.3.1: {}
 
