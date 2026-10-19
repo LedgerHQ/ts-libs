@@ -19,8 +19,8 @@ catalogs:
       specifier: 1.2.1
       version: 1.2.1
     '@ledgerhq/speculos-device-controller':
-      specifier: 0.3.0
-      version: 0.3.0
+      specifier: 0.4.0
+      version: 0.4.0
     '@noble/ciphers':
       specifier: 2.4.0
       version: 2.4.0
@@ -492,7 +492,7 @@ importers:
         version: link:../hw-transport-mocker
       '@ledgerhq/speculos-device-controller':
         specifier: 'catalog:'
-        version: 0.3.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))
+        version: 0.4.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))
       '@swc/core':
         specifier: 'catalog:'
         version: 1.16.13
@@ -1465,10 +1465,10 @@ packages:
       '@ledgerhq/device-management-kit': ^1.5.1
       rxjs: 7.8.2
 
-  '@ledgerhq/speculos-device-controller@0.3.0':
-    resolution: {integrity: sha512-FCOGVs28pTxYEom+Yr8skQ1QUyj1+sC0YDvE+Xk+DfXQx8FMRI1l41x+XT8ZGPNUh8kRTd0hsZc2lqVpxD6a8w==}
+  '@ledgerhq/speculos-device-controller@0.4.0':
+    resolution: {integrity: sha512-OTvXEwyGEJraYTT/QvBllF/laxIR+yUCKvr5yFDcPUETIxjDqy7PvSSikNo6cbI4tonk3qZ3Y/tqVvtDfS55fg==}
     peerDependencies:
-      '@ledgerhq/device-management-kit': ^1.5.1
+      '@ledgerhq/device-management-kit': ^1.11.0
 
   '@manypkg/find-root@3.1.0':
     resolution: {integrity: sha512-BcSqCyKhBVZ5YkSzOiheMCV41kqAFptW6xGqYSTjkVTl9XQpr+pqHhwgGCOHQtjDCv7Is6EFyA14Sm5GVbVABA==}
@@ -5583,7 +5583,7 @@ snapshots:
       purify-ts: 2.1.0
       rxjs: 7.8.2
 
-  '@ledgerhq/speculos-device-controller@0.3.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))':
+  '@ledgerhq/speculos-device-controller@0.4.0(@ledgerhq/device-management-kit@1.11.0(rxjs@7.8.2))':
     dependencies:
       '@ledgerhq/device-management-kit': 1.11.0(rxjs@7.8.2)
       '@sentry/minimal': 6.19.7
