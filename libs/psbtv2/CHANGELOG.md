@@ -1,5 +1,11 @@
 # @ledgerhq/psbtv2
 
+## 0.6.2
+
+### Patch Changes
+
+- [#160](https://github.com/LedgerHQ/ts-libs/pull/160) [`fb8352d`](https://github.com/LedgerHQ/ts-libs/commit/fb8352dff5e113a927c71003c04261d56098bf92) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Bump `bitcoinjs-lib` to ^7.0.4 (PSBT input value and fee cache security fixes)
+
 ## 0.6.1
 
 ### Patch Changes

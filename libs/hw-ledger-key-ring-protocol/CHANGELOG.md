@@ -1,5 +1,12 @@
 # @ledgerhq/hw-ledger-key-ring-protocol
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @ledgerhq/hw-transport@6.36.1
+
 ## 1.0.0
 
 ### Major Changes

@@ -1,5 +1,12 @@
 # @ledgerhq/hw-transport
 
+## 6.36.1
+
+### Patch Changes
+
+- Updated dependencies [[`5f376dc`](https://github.com/LedgerHQ/ts-libs/commit/5f376dc7ad7a392e54d24fc8e669d160f600f750)]:
+  - @ledgerhq/devices@8.18.1
+
 ## 6.36.0
 
 ### Minor Changes
