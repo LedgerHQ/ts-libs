@@ -3,12 +3,15 @@ import { createQRCodeHostInstance, createQRCodeCandidateInstance } from ".";
 import WebSocket from "ws";
 import { convertKeyPairToLiveCredentials } from "../utils";
 import { crypto } from "@ledgerhq/hw-ledger-key-ring-protocol";
+import { Log, listen } from "@ledgerhq/logs";
 import { MessageCipher, makeCipher, makeMessageCipher } from "./cipher";
 import {
   InvalidDigitsError,
+  NoTrustchainInitialized,
   QRCodeProtocolError,
   ScannedInvalidQrCode,
   ScannedOldImportQrCode,
+  TrustchainAlreadyInitialized,
 } from "../errors";
 
 // Test data constants
@@ -346,6 +349,80 @@ describe("Trustchain QR Code", () => {
 
     expect(res).toEqual(MOCK_TRUSTCHAIN);
     expect(addMember).toHaveBeenCalledTimes(1);
+  });
+
+  describe("error reporting", () => {
+    it.each([
+      ["neither side has a trustchain", undefined, undefined, true, NoTrustchainInitialized],
+      [
+        "both sides have a trustchain",
+        MOCK_TRUSTCHAIN.rootId,
+        MOCK_TRUSTCHAIN.rootId,
+        true,
+        TrustchainAlreadyInitialized,
+      ],
+      ["the digits are wrong", MOCK_TRUSTCHAIN.rootId, undefined, false, InvalidDigitsError],
+    ])(
+      "logs without console.error when %s",
+      async (_, hostTrustchainId, candidateTrustchainId, rightDigits, ErrorClass) => {
+        const logs: Log[] = [];
+        const unsubscribe = listen(log => logs.push(log));
+        relay = await createRelay();
+        const { memberCredentials, addMember, memberName } = await createTestSetup();
+        const onDisplayDigits = jest.fn();
+        const onRequestQRCodeInput = jest.fn((config, callback) =>
+          callback(rightDigits ? onDisplayDigits.mock.calls[0][0] : "---"),
+        );
+
+        const { promise: hostP, url: scannedUrl } = await startHost({
+          initialTrustchainId: hostTrustchainId,
+          onDisplayDigits,
+          addMember,
+          memberCredentials,
+          memberName,
+        });
+
+        const candidateP = createQRCodeCandidateInstance({
+          memberCredentials,
+          memberName,
+          initialTrustchainId: candidateTrustchainId,
+          addMember,
+          scannedUrl,
+          onRequestQRCodeInput,
+        });
+
+        await expect(hostP).rejects.toThrow(ErrorClass);
+        await expect(candidateP).rejects.toThrow(ErrorClass);
+        unsubscribe();
+        expect(consoleError).not.toHaveBeenCalled();
+        expect(logs).toContainEqual(
+          expect.objectContaining({
+            type: "trustchain/qrcode",
+            message: "socket error",
+            data: { error: expect.any(ErrorClass) },
+          }),
+        );
+      },
+    );
+
+    test("still reports a protocol error to console.error", async () => {
+      relay = await createRelay();
+      const { memberCredentials, addMember, memberName } = await createTestSetup();
+
+      const { promise: hostP, url } = await startHost({
+        initialTrustchainId: MOCK_TRUSTCHAIN.rootId,
+        addMember,
+        memberCredentials,
+        memberName,
+      });
+
+      const peer = await createPeer(url, hostPublicKeyOf(url));
+      peer.sendRaw("not json");
+
+      await expect(hostP).rejects.toThrow(QRCodeProtocolError);
+      expect(consoleError).toHaveBeenCalledWith("socket error", expect.any(QRCodeProtocolError));
+      peer.close();
+    });
   });
 
   describe("protocol enforcement", () => {

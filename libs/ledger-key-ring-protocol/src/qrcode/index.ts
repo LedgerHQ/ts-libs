@@ -59,10 +59,26 @@ function decrypt<M extends Message, T>(cipher: MessageCipher, message: M, schema
   return parsed.data;
 }
 
+// expected user cases handled by the apps' UI; console.error would report them to Datadog
+const EXPECTED_ERROR_NAMES = new Set([
+  "NoTrustchainInitialized",
+  "TrustchainAlreadyInitialized",
+  "InvalidDigitsError",
+]);
+
+const isExpectedError = (error: unknown): boolean => {
+  const name = (error as { name?: unknown } | null)?.name;
+  return typeof name === "string" && EXPECTED_ERROR_NAMES.has(name);
+};
+
 const makeFail =
   (sm: ProtocolStateMachine, ws: WebSocket, reject: (error: unknown) => void) =>
   (error: unknown) => {
-    console.error("socket error", error);
+    if (isExpectedError(error)) {
+      log("trustchain/qrcode", "socket error", { error });
+    } else {
+      console.error("socket error", error);
+    }
     // closing is asynchronous, so frames already queued would otherwise still be handled
     sm.abort();
     ws.close();
