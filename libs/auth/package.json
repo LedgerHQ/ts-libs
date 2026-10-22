@@ -1,6 +1,6 @@
 {
   "name": "@ledgerhq/auth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ledger authentication helpers",
   "keywords": [
     "Ledger"

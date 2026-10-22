@@ -1,5 +1,11 @@
 # @ledgerhq/live-config
 
+## 3.9.1
+
+### Patch Changes
+
+- [#162](https://github.com/LedgerHQ/ts-libs/pull/162) [`16133ef`](https://github.com/LedgerHQ/ts-libs/commit/16133efb647a773852f33beffc5b9b29a13cd795) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Bump `lodash` to 4.18.1
+
 ## 3.9.0
 
 ### Minor Changes
