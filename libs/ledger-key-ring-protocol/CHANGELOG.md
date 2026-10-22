@@ -1,5 +1,19 @@
 # @ledgerhq/ledger-key-ring-protocol
 
+## 1.1.0
+
+### Minor Changes
+
+- [#163](https://github.com/LedgerHQ/ts-libs/pull/163) [`ebc9afe`](https://github.com/LedgerHQ/ts-libs/commit/ebc9afe6d4941bcd390cfd01d10ccc8d20ac93de) Thanks [@ovoronkov-ledger](https://github.com/ovoronkov-ledger)! - Stop reporting expected QR code pairing errors (NoTrustchainInitialized, TrustchainAlreadyInitialized, InvalidDigitsError) with console.error
+
+### Patch Changes
+
+- [#158](https://github.com/LedgerHQ/ts-libs/pull/158) [`ab958b4`](https://github.com/LedgerHQ/ts-libs/commit/ab958b4fb2f19ff2e2d2e9e85ad099906ecea1ec) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Bump `zod` to 4.6.7
+- Updated dependencies [[`ab958b4`](https://github.com/LedgerHQ/ts-libs/commit/ab958b4fb2f19ff2e2d2e9e85ad099906ecea1ec)]:
+  - @ledgerhq/auth@0.1.1
+  - @ledgerhq/hw-transport@6.36.1
+  - @ledgerhq/hw-ledger-key-ring-protocol@1.0.1
+
 ## 1.0.0
 
 ### Major Changes
