@@ -199,6 +199,7 @@ declare global {
   }
 }
 
-if (typeof window !== "undefined") {
-  window.__ledgerLogsListen = listen;
+const browserWindow = (globalThis as { window?: Window }).window;
+if (browserWindow) {
+  browserWindow.__ledgerLogsListen = listen;
 }

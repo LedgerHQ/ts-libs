@@ -5,6 +5,7 @@
     "rootDir": "src",
     "declaration": true,
     "declarationMap": true,
+    "lib": ["ESNext"],
     "types": ["jest", "node"]
   },
   "include": ["src/**/*"]
