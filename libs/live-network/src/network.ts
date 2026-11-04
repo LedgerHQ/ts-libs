@@ -256,7 +256,7 @@ const implementation = <T = any>(arg: AxiosRequestConfig): AxiosPromise<T> => {
 };
 
 const canSetUserAgentHeader = (): boolean =>
-  typeof globalThis?.window === "undefined" &&
+  typeof (globalThis as { window?: unknown }).window === "undefined" &&
   typeof process !== "undefined" &&
   process.release?.name === "node";
 

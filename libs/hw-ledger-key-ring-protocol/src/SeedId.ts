@@ -25,7 +25,7 @@ export class PubKeyCredential {
     this.publicKey = publicKey;
   }
 
-  static fromBytes(data, offset = 0): [PubKeyCredential, number] {
+  static fromBytes(data: Uint8Array, offset = 0): [PubKeyCredential, number] {
     const view = new DataView(data.buffer, data.byteOffset + offset);
     const version = view.getUint8(0);
     const curveId = view.getUint8(1);
