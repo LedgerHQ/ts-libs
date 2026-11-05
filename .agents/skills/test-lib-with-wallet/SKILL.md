@@ -77,9 +77,9 @@ grep -rhoE "@ledgerhq/<name>/[a-zA-Z0-9_./-]+" \
 ```
 
 Enumerate everything the old wildcards matched, including the non-obvious: `./index`, and
-the `./lib/*` / `./lib-es/*` paths that published `.d.ts` files reference. `tsc` and unit
-tests resolve through `@ledgerhq/source` to `src/`, so a missing subpath surfaces only when
-a bundler resolves the published package.
+the `./lib/*` / `./lib-es/*` paths that published `.d.ts` files reference. `tsc` does not
+check those files (`skipLibCheck`), so a missing subpath they reference surfaces only when a
+bundler resolves the published package.
 
 ### 4. Peer audit
 

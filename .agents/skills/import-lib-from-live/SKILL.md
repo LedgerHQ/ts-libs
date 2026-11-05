@@ -77,12 +77,10 @@ Two ledger-live conventions must also not follow the library in:
 
 - **`@ledgerhq/test-quarantine`** — private flake-reporter/retry wiring in the jest config. Drop the
   `reporters` and `setupFilesAfterEnv` entries; ts-libs uses plain `jest-sonar` (see step 9).
-- **resolving anything through the `@ledgerhq/source` condition that is not a ts-libs package.**
-  ts-libs sets `customConditions: ["@ledgerhq/source"]`, so an external `@ledgerhq/*` dependency
-  resolves to its raw `src/*.ts`, not its `.d.ts` — `skipLibCheck` stops protecting you and you
-  inherit *its* undeclared type deps. The symptom is bogus errors inside `node_modules` (missing
-  `@ledgerhq/types-devices`, "Cannot find namespace 'React'") that tempt you into adding type-only
-  devDeps to paper over them. Do not: it means rule 1 above was skipped.
+- **the `@ledgerhq/source` export condition.** Drop it from every `exports` entry, and the
+  `customConditions: []` override from `tsconfig.build.json`. ledger-live sets
+  `customConditions: ["@ledgerhq/source"]`, so a published entry makes it compile this library's
+  raw `src/*.ts` under its own compiler options — `skipLibCheck` only covers `.d.ts` files.
 
 Run this audit again at the end of the import — it is the check that proves the repo still stands
 alone:
@@ -224,7 +222,7 @@ Replace any `workspace:*` runtime deps with their pinned npm version (look up cu
 
 The root `.gitignore` lists `lib/` and `lib-es/`. Without a `files` field `pnpm pack` falls back to those rules and drops `lib-es/` from the tarball, while force-keeping `lib/` because `main` and `types` point into it. The package then publishes with a `module` field and an `import` condition aimed at a directory that is not in the tarball — every ESM and bundler consumer breaks on upgrade with `ERR_MODULE_NOT_FOUND`, and CommonJS consumers notice nothing, so it survives smoke tests. This is exactly how `@ledgerhq/logs@6.18.0` shipped broken. Note `npm pack` does *not* reproduce it — only `pnpm pack`, which is what the release uses.
 
-Keep `src` in the list: the `@ledgerhq/source` export condition resolves into it.
+Keep `src` in the list: the source maps and declaration maps point into it.
 
 Remove wildcard sub-path exports from the `exports` field — keep only the `"."` root and `"./package.json"` entries:
 
@@ -232,7 +230,6 @@ Remove wildcard sub-path exports from the `exports` field — keep only the `"."
 {
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/index.ts",
       "import": "./lib-es/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"

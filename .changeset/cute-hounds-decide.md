@@ -5,4 +5,4 @@
 "@ledgerhq/live-network": patch
 ---
 
-Type-check the sources without implicit any or DOM types, as consumers compiling them through the @ledgerhq/source condition do
+Type-check the sources without implicit any or DOM types

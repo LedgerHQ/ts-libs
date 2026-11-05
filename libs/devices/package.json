@@ -32,13 +32,11 @@
   },
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/index.ts",
       "import": "./lib-es/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"
     },
     "./helpers": {
-      "@ledgerhq/source": "./src/helpers.ts",
       "import": "./lib-es/helpers.js",
       "require": "./lib/helpers.js",
       "default": "./lib/helpers.js"
