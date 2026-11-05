@@ -411,6 +411,7 @@ export class PsbtV2 {
     const tx = Transaction.fromBuffer(txBuffer);
     PsbtV2.addInputsFromV0(psbtv2, psbtv0, tx);
     PsbtV2.addOutputsFromV0(psbtv2, psbtv0, tx);
+    PsbtV2.transferProprietaryOutputKeyVals(psbtv2, psbtv0);
 
     // Signer Role - Transfer partial signatures
     PsbtV2.transferPartialSignatures(psbtv2, psbtv0);
@@ -501,6 +502,14 @@ export class PsbtV2 {
         }
       }
     }
+  }
+
+  // Proprietary output fields (0xFC) can carry data a device app displays. Other unknown keys stay
+  // dropped: some are standard fields the Bitcoin app acts on (MuSig2) that a v0 never forwarded.
+  private static transferProprietaryOutputKeyVals(psbtv2: PsbtV2, psbtv0: Psbt) {
+    psbtv0.data.outputs.forEach((output, index) =>
+      transferProprietaryKeyVals(psbtv2.getMap(index, psbtv2.outputMaps), output.unknownKeyVals),
+    );
   }
 
   private static transferPartialSignatures(psbtv2: PsbtV2, psbtv0: Psbt) {
@@ -694,6 +703,20 @@ class KeyPair {
 function createKey(buf: Buffer): Key {
   return new Key(buf.readUInt8(0), buf.subarray(1));
 }
+const PSBT_PROPRIETARY_KEY_TYPE = 0xfc;
+
+function transferProprietaryKeyVals(
+  to: Map<string, Buffer>,
+  entries: { key: Uint8Array; value: Uint8Array }[] | undefined,
+) {
+  for (const { key, value } of entries ?? []) {
+    if (key[0] !== PSBT_PROPRIETARY_KEY_TYPE) continue;
+    const mapKey = new Key(key[0], Buffer.from(key.subarray(1))).toString();
+    if (to.has(mapKey)) continue;
+    to.set(mapKey, Buffer.from(value));
+  }
+}
+
 function serializeMap(buf: BufferWriter, map: Map<string, Buffer>) {
   for (const k of map.keys()) {
     const value = map.get(k)!;
