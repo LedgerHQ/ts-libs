@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import { toLocaleString } from "./BigNumberToLocaleString";
 
 test("basic toLocaleString usage", () => {

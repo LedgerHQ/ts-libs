@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import { getSeparators } from "./localeUtility";
 import { toLocaleString } from "./BigNumberToLocaleString";
 import { forceLTRIfRTL } from "./rtl";
@@ -111,7 +111,7 @@ const buildFormatState = (
     staticSignificantDigits,
   } = resolvedOptions;
   const { magnitude, code } = unit;
-  const floatValue = value.div(new BigNumber(10).pow(magnitude));
+  const floatValue = value.shiftedBy(-magnitude);
   const floatValueAbs = floatValue.abs();
   const minimumFractionDigits = showAllDigits ? magnitude : 0;
   const maximumFractionDigits = disableRounding
