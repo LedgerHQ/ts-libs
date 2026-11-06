@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import type { Unit } from "./types";
 import {
   formatPrice,
@@ -105,6 +105,13 @@ describe("formatPriceFragment", () => {
     const fragment = formatPriceFragment(usdUnit, 0.0000012345, "en-US");
     expect((fragment.decimalPart ?? "").length).toBeLessThanOrEqual(6);
   });
+
+  it.each([undefined, null])("returns empty parts for a missing amount (%s)", missing => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const fragment = formatPriceFragment(usdUnit, missing as unknown as number, "en-US");
+    warn.mockRestore();
+    expect(fragment).toMatchObject({ integerPart: "", decimalPart: "", currencyText: "" });
+  });
 });
 
 describe("formatSignedFiatVariation", () => {
@@ -158,6 +165,19 @@ describe("formatSignedFiatVariation", () => {
     it("wraps a tiny negative variation with the sign and threshold marker inside the LTR isolate", () => {
       expect(formatSignedFiatVariation(-6e-9, sarUnit, "en-US")).toBe(`${LRI}-<﷼0.000001${PDI}`);
     });
+  });
+});
+
+describe("formatSignedFiatVariation with a missing amount", () => {
+  it("returns an empty string for undefined", () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const result = formatSignedFiatVariation(undefined as unknown as number, usdUnit, "en-US");
+    warn.mockRestore();
+    expect(result).toBe("");
+  });
+
+  it("treats null as zero", () => {
+    expect(formatSignedFiatVariation(null as unknown as number, usdUnit, "en-US")).toBe("$0.00");
   });
 });
 

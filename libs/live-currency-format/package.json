@@ -89,14 +89,15 @@
     "test": "jest --passWithNoTests",
     "coverage": "jest --coverage --passWithNoTests"
   },
-  "dependencies": {
-    "bignumber.js": "^9.1.2"
+  "peerDependencies": {
+    "bignumber.js": "^9.1.2 || ^11.0.0"
   },
   "devDependencies": {
     "@swc/core": "catalog:",
     "@swc/jest": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
+    "bignumber.js": "^11.1.5",
     "jest": "catalog:",
     "jest-sonar": "catalog:",
     "oxlint": "catalog:",

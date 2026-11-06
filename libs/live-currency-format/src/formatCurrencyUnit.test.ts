@@ -1,6 +1,6 @@
 // oxlint-disable jest/prefer-snapshot-hint -- test.each already gives every snapshot a unique key
 import { formatCurrencyUnit, formatCurrencyUnitFragment } from "./formatCurrencyUnit";
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import type { Unit } from "./types";
 import { currencyTestCases } from "./__fixtures__/currencies";
 
