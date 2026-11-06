@@ -5,6 +5,25 @@ import { PsbtV2 } from "./psbtv2";
 
 const ECPair = ECPairFactory(ecc);
 
+const proprietaryKey = Buffer.from("fc05" + Buffer.from("hashi").toString("hex") + "00", "hex");
+const proprietaryValue = Buffer.from("11".repeat(32), "hex");
+
+function encodeKeyPair(key: Buffer, value: Buffer): Buffer {
+  return Buffer.concat([Buffer.from([key.length]), key, Buffer.from([value.length]), value]);
+}
+
+function buildPsbtv0(): Psbt {
+  const psbtv0 = new Psbt({ network: networks.testnet });
+  psbtv0.addInput({
+    hash: Buffer.from("01".repeat(32), "hex"),
+    index: 0,
+    witnessUtxo: { script: Buffer.from("0014" + "00".repeat(20), "hex"), value: 100000n },
+  });
+  psbtv0.addOutput({ script: Buffer.from("5120" + "22".repeat(32), "hex"), value: 60000n });
+  psbtv0.addOutput({ script: Buffer.from("0014" + "11".repeat(20), "hex"), value: 39000n });
+  return psbtv0;
+}
+
 describe("PsbtV2.fromV0", () => {
   describe("Basic Conversion", () => {
     it("should convert a simple PSBTv0 with one P2WPKH input and output", () => {
@@ -563,6 +582,112 @@ describe("PsbtV2.fromV0", () => {
       expect(psbtv2Copy.getInputOutputIndex(0)).toBe(7);
       expect(psbtv2Copy.getInputSequence(0)).toBe(0xfffffffe);
       expect(psbtv2Copy.getOutputAmount(0)).toBe(240000);
+    });
+  });
+
+  describe("Unknown and Proprietary Keys", () => {
+    it("should keep a proprietary output field byte for byte", () => {
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: proprietaryValue });
+
+      const serialized = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+      const psbtv2 = new PsbtV2();
+      psbtv2.deserialize(serialized);
+
+      expect(serialized.includes(encodeKeyPair(proprietaryKey, proprietaryValue))).toBe(true);
+      expect(psbtv2.serialize()).toEqual(serialized);
+      expect(psbtv2.getOutputAmount(0)).toBe(60000);
+      expect(psbtv2.getOutputScript(0).toString("hex")).toBe("5120" + "22".repeat(32));
+    });
+
+    it("should keep the field on its own output only", () => {
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToOutput(1, { key: proprietaryKey, value: proprietaryValue });
+
+      const psbtv2 = new PsbtV2();
+      psbtv2.deserialize(PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize());
+
+      expect(psbtv2.getOutputKeyDatas(0, proprietaryKey[0])).toEqual([]);
+      expect(psbtv2.getOutputKeyDatas(1, proprietaryKey[0])).toEqual([proprietaryKey.subarray(1)]);
+    });
+
+    it("should drop proprietary global and input keys", () => {
+      const globalKey = Buffer.from("fc04746573740001", "hex");
+      const inputKey = Buffer.from("fc0474657374000a", "hex");
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToGlobal({ key: globalKey, value: Buffer.from("aa", "hex") });
+      psbtv0.addUnknownKeyValToInput(0, { key: inputKey, value: Buffer.from("bb", "hex") });
+
+      const serialized = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+      const withoutKeys = PsbtV2.fromV0(Buffer.from(buildPsbtv0().toBuffer()), true).serialize();
+
+      expect(serialized).toEqual(withoutKeys);
+    });
+
+    it("should drop a non-proprietary unknown output key", () => {
+      // PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS (0x08) followed by a 33-byte aggregate key.
+      const musig2Key = Buffer.from("0802" + "33".repeat(32), "hex");
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToOutput(0, {
+        key: musig2Key,
+        value: Buffer.from("02" + "44".repeat(32), "hex"),
+      });
+      psbtv0.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: proprietaryValue });
+
+      const serialized = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true).serialize();
+
+      expect(serialized.includes(musig2Key)).toBe(false);
+      expect(serialized.includes(encodeKeyPair(proprietaryKey, proprietaryValue))).toBe(true);
+    });
+
+    it("should add no key when the PSBTv0 has no unknown keys", () => {
+      const psbtv0 = buildPsbtv0();
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
+      expect(psbtv2.getGlobalOutputCount()).toBe(2);
+      expect(psbtv2.serialize().includes(proprietaryKey)).toBe(false);
+    });
+
+    it("should reject a PSBTv0 that repeats a proprietary key on one output", () => {
+      const psbtv0 = buildPsbtv0();
+      psbtv0.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: proprietaryValue });
+      psbtv0.data.outputs[0].unknownKeyVals!.push({
+        key: proprietaryKey,
+        value: Buffer.from("22".repeat(32), "hex"),
+      });
+
+      expect(() => PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true)).toThrow(
+        /Keys must be unique/,
+      );
+    });
+
+    it("should leave known output fields unchanged next to a proprietary field", () => {
+      const redeemScript = Buffer.from("0014" + "22".repeat(20), "hex");
+      const pubkey = Buffer.from("02" + "33".repeat(32), "hex");
+      const masterFingerprint = Buffer.from("deadbeef", "hex");
+      const psbtv0 = new Psbt({ network: networks.testnet });
+      psbtv0.addInput({
+        hash: Buffer.alloc(32, 0),
+        index: 0,
+        witnessUtxo: { script: Buffer.from("0014" + "00".repeat(20), "hex"), value: 100000n },
+      });
+      psbtv0.addOutput({
+        script: Buffer.from("a914" + "11".repeat(20) + "87", "hex"),
+        value: 90000n,
+        redeemScript,
+        bip32Derivation: [{ pubkey, masterFingerprint, path: "m/84'/1'/0'/1/0" }],
+      });
+      psbtv0.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: proprietaryValue });
+
+      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
+
+      expect(psbtv2.getOutputRedeemScript(0)).toEqual(redeemScript);
+      expect(psbtv2.getOutputBip32Derivation(0, pubkey).masterFingerprint).toEqual(
+        masterFingerprint,
+      );
+      expect(psbtv2.getOutputAmount(0)).toBe(90000);
+      expect(psbtv2.serialize().includes(encodeKeyPair(proprietaryKey, proprietaryValue))).toBe(
+        true,
+      );
     });
   });
 });
