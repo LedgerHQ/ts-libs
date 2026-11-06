@@ -703,6 +703,7 @@ class KeyPair {
 function createKey(buf: Buffer): Key {
   return new Key(buf.readUInt8(0), buf.subarray(1));
 }
+
 const PSBT_PROPRIETARY_KEY_TYPE = 0xfc;
 
 function transferProprietaryKeyVals(
@@ -711,9 +712,7 @@ function transferProprietaryKeyVals(
 ) {
   for (const { key, value } of entries ?? []) {
     if (key[0] !== PSBT_PROPRIETARY_KEY_TYPE) continue;
-    const mapKey = new Key(key[0], Buffer.from(key.subarray(1))).toString();
-    if (to.has(mapKey)) continue;
-    to.set(mapKey, Buffer.from(value));
+    to.set(new Key(key[0], Buffer.from(key.subarray(1))).toString(), Buffer.from(value));
   }
 }
 

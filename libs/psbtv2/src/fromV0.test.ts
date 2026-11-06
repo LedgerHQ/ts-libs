@@ -611,21 +611,6 @@ describe("PsbtV2.fromV0", () => {
       expect(psbtv2.getOutputKeyDatas(1, proprietaryKey[0])).toEqual([proprietaryKey.subarray(1)]);
     });
 
-    it("should not overwrite a key already present on the output", () => {
-      const existingValue = Buffer.from("33".repeat(32), "hex");
-      const psbtv0 = buildPsbtv0();
-      psbtv0.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: existingValue });
-      const psbtv2 = PsbtV2.fromV0(Buffer.from(psbtv0.toBuffer()), true);
-
-      const incoming = buildPsbtv0();
-      incoming.addUnknownKeyValToOutput(0, { key: proprietaryKey, value: proprietaryValue });
-      PsbtV2["transferProprietaryOutputKeyVals"](psbtv2, incoming);
-
-      const serialized = psbtv2.serialize();
-      expect(serialized.includes(encodeKeyPair(proprietaryKey, existingValue))).toBe(true);
-      expect(serialized.includes(encodeKeyPair(proprietaryKey, proprietaryValue))).toBe(false);
-    });
-
     it("should drop proprietary global and input keys", () => {
       const globalKey = Buffer.from("fc04746573740001", "hex");
       const inputKey = Buffer.from("fc0474657374000a", "hex");
