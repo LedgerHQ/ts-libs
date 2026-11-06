@@ -3,12 +3,9 @@
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
     "lib": ["es2022"],
     "types": ["node", "jest"],
-    "outDir": "lib",
-    "rootDir": "."
+    "outDir": "lib"
   },
   "include": ["src/**/*", "tests/**/*"]
 }

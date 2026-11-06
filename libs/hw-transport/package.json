@@ -36,13 +36,11 @@
   },
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/Transport.ts",
       "import": "./lib-es/Transport.js",
       "require": "./lib/Transport.js",
       "default": "./lib/Transport.js"
     },
     "./errors": {
-      "@ledgerhq/source": "./src/errors.ts",
       "import": "./lib-es/errors.js",
       "require": "./lib/errors.js",
       "default": "./lib/errors.js"

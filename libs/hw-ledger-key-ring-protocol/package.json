@@ -44,25 +44,21 @@
   },
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/index.ts",
       "import": "./lib-es/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"
     },
     "./ApduDevice": {
-      "@ledgerhq/source": "./src/ApduDevice.ts",
       "import": "./lib-es/ApduDevice.js",
       "require": "./lib/ApduDevice.js",
       "default": "./lib/ApduDevice.js"
     },
     "./CommandBlock": {
-      "@ledgerhq/source": "./src/CommandBlock.ts",
       "import": "./lib-es/CommandBlock.js",
       "require": "./lib/CommandBlock.js",
       "default": "./lib/CommandBlock.js"
     },
     "./Crypto": {
-      "@ledgerhq/source": "./src/Crypto.ts",
       "import": "./lib-es/Crypto.js",
       "require": "./lib/Crypto.js",
       "default": "./lib/Crypto.js"

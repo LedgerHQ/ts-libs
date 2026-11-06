@@ -25,7 +25,6 @@
   "types": "lib/index.d.ts",
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/index.ts",
       "import": "./lib-es/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"
