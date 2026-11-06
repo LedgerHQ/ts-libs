@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import type { Unit } from "./types";
 import {
   formatCurrencyUnit,
@@ -18,7 +18,7 @@ const priceOptions = (absFiat: number, unit: Unit) => {
 };
 
 const valueFromUnit = (valueInUnit: BigNumber, unit: Unit): BigNumber =>
-  valueInUnit.times(new BigNumber(10).pow(unit.magnitude));
+  valueInUnit.shiftedBy(unit.magnitude);
 
 /** Format a fiat price expressed in the unit's smallest atom. */
 export function formatPrice(

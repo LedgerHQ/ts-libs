@@ -1,6 +1,6 @@
 // Implement a subset of Number#toLocaleString for BigNumber.js
 // https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Objets_globaux/Number/toLocaleString
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import { getSeparators } from "./localeUtility";
 
 export type SupportedOptions = {

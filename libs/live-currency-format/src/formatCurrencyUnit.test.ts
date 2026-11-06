@@ -1,6 +1,6 @@
 // oxlint-disable jest/prefer-snapshot-hint -- test.each already gives every snapshot a unique key
 import { formatCurrencyUnit, formatCurrencyUnitFragment } from "./formatCurrencyUnit";
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import type { Unit } from "./types";
 import { currencyTestCases } from "./__fixtures__/currencies";
 
@@ -284,6 +284,21 @@ describe("formatCurrencyUnit", () => {
       const value = new BigNumber("12345");
       const result = formatCurrencyUnit(unit, value, { showCode: false });
       expect(result).toBe("123.45");
+    });
+
+    test("does not depend on DECIMAL_PLACES for large magnitudes", () => {
+      const unit: Unit = {
+        name: "Test",
+        code: "TST",
+        magnitude: 45,
+        showAllDigits: true,
+        prefixCode: false,
+      };
+      const result = formatCurrencyUnit(unit, new BigNumber(1), {
+        disableRounding: true,
+        useGrouping: false,
+      });
+      expect(result).toBe(`0.${"0".repeat(44)}1`);
     });
   });
 });
