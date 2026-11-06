@@ -6,7 +6,6 @@
     "moduleResolution": "NodeNext",
     "isolatedModules": true,
     "sourceMap": true,
-    "skipLibCheck": true,
-    "customConditions": ["@ledgerhq/source"]
+    "skipLibCheck": true
   }
 }

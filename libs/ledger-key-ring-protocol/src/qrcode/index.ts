@@ -477,7 +477,7 @@ function constantTimeEqual(a: unknown, b: string | undefined): boolean {
   return diff === 0;
 }
 
-function parseMessage(e): Message {
+function parseMessage(e: WebSocket.Data): Message {
   let json: unknown;
   try {
     json = JSON.parse(e.toString());

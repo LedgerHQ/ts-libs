@@ -219,7 +219,7 @@ function decodeBody(buffer: Buffer, encoding?: string): Buffer {
   }
 }
 
-function headersToJson(headers, exclude?: Set<string>) {
+function headersToJson(headers: Headers, exclude?: Set<string>) {
   const obj: Record<string, string> = {};
   for (const [key, value] of headers.entries()) {
     if (exclude?.has(key.toLowerCase())) continue;

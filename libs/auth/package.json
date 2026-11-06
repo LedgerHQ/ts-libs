@@ -1,6 +1,6 @@
 {
   "name": "@ledgerhq/auth",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Ledger authentication helpers",
   "keywords": [
     "Ledger"
@@ -47,7 +47,6 @@
   },
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/index.ts",
       "import": "./lib-es/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"

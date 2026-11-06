@@ -1,5 +1,15 @@
 # @ledgerhq/logs
 
+## 6.20.0
+
+### Minor Changes
+
+- [#173](https://github.com/LedgerHQ/ts-libs/pull/173) [`b8d7a12`](https://github.com/LedgerHQ/ts-libs/commit/b8d7a1231d71a0f0b98bc768513ecb0d318ef3f1) Thanks [@thesan](https://github.com/thesan)! - Drop the @ledgerhq/source export condition, so consumers that enable it read the built declarations instead of compiling the sources
+
+### Patch Changes
+
+- [#171](https://github.com/LedgerHQ/ts-libs/pull/171) [`c8d2d68`](https://github.com/LedgerHQ/ts-libs/commit/c8d2d682f5492433a14b3b7838e21ef0d890df4c) Thanks [@thesan](https://github.com/thesan)! - Type-check the sources without implicit any or DOM types
+
 ## 6.19.0
 
 ### Minor Changes

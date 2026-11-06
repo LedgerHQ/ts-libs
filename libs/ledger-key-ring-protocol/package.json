@@ -1,6 +1,6 @@
 {
   "name": "@ledgerhq/ledger-key-ring-protocol",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Ledger Key Ring Protocol layer",
   "keywords": [
     "Ledger"
@@ -18,55 +18,46 @@
   "types": "lib/index.d.ts",
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/index.ts",
       "import": "./lib-es/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"
     },
     "./api": {
-      "@ledgerhq/source": "./src/api.ts",
       "import": "./lib-es/api.js",
       "require": "./lib/api.js",
       "default": "./lib/api.js"
     },
     "./errors": {
-      "@ledgerhq/source": "./src/errors.ts",
       "import": "./lib-es/errors.js",
       "require": "./lib/errors.js",
       "default": "./lib/errors.js"
     },
     "./index": {
-      "@ledgerhq/source": "./src/index.ts",
       "import": "./lib-es/index.js",
       "require": "./lib/index.js",
       "default": "./lib/index.js"
     },
     "./qrcode/index": {
-      "@ledgerhq/source": "./src/qrcode/index.ts",
       "import": "./lib-es/qrcode/index.js",
       "require": "./lib/qrcode/index.js",
       "default": "./lib/qrcode/index.js"
     },
     "./store": {
-      "@ledgerhq/source": "./src/store.ts",
       "import": "./lib-es/store.js",
       "require": "./lib/store.js",
       "default": "./lib/store.js"
     },
     "./types": {
-      "@ledgerhq/source": "./src/types.ts",
       "import": "./lib-es/types.js",
       "require": "./lib/types.js",
       "default": "./lib/types.js"
     },
     "./utils": {
-      "@ledgerhq/source": "./src/utils.ts",
       "import": "./lib-es/utils.js",
       "require": "./lib/utils.js",
       "default": "./lib/utils.js"
     },
     "./__mocks__/challenge": {
-      "@ledgerhq/source": "./src/__mocks__/challenge.ts",
       "import": "./lib-es/__mocks__/challenge.js",
       "require": "./lib/__mocks__/challenge.js",
       "default": "./lib/__mocks__/challenge.js"

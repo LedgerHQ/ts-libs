@@ -47,7 +47,9 @@ pnpm changelog                            # add a changeset
 
 ## Conventions
 
-- **TypeScript**: strict mode, NodeNext module resolution, `customConditions: ["@ledgerhq/source"]`
+- **TypeScript**: strict mode, NodeNext module resolution
+- **Exports**: no `@ledgerhq/source` condition. ledger-live enables it, so a published entry makes
+  it compile our `src/` under its own compiler options instead of reading the built declarations
 - **Build outputs**: `lib/` (CJS) and `lib-es/` (ESM)
 - **DevDeps**: all shared tools (jest, swc, typescript, oxlint…) go in `catalog:` in `pnpm-workspace.yaml`
 - **No `rimraf`**: use `rm -rf lib lib-es` in clean scripts

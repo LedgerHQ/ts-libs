@@ -1,6 +1,6 @@
 {
   "name": "@ledgerhq/hw-transport",
-  "version": "6.36.1",
+  "version": "6.37.0",
   "description": "Ledger Hardware Wallet common interface of the communication layer",
   "keywords": [
     "Ledger",
@@ -36,13 +36,11 @@
   },
   "exports": {
     ".": {
-      "@ledgerhq/source": "./src/Transport.ts",
       "import": "./lib-es/Transport.js",
       "require": "./lib/Transport.js",
       "default": "./lib/Transport.js"
     },
     "./errors": {
-      "@ledgerhq/source": "./src/errors.ts",
       "import": "./lib-es/errors.js",
       "require": "./lib/errors.js",
       "default": "./lib/errors.js"
