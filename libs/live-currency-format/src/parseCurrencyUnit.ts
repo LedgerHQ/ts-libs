@@ -10,5 +10,5 @@ export const parseCurrencyUnit = (unit: Unit, valueString: string): BigNumber =>
   const str = valueString.replace(/,/g, ".");
   const value = new BigNumber(str);
   if (value.isNaN()) return new BigNumber(0);
-  return value.times(new BigNumber(10).pow(unit.magnitude)).integerValue();
+  return value.shiftedBy(unit.magnitude).integerValue();
 };

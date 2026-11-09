@@ -3,7 +3,6 @@ export default {
     "^.+\\.(ts|tsx)$": ["@swc/jest", { jsc: { parser: { syntax: "typescript" } } }],
   },
   testEnvironment: "node",
-  setupFilesAfterEnv: ["<rootDir>/src/setup.ts"],
   coverageReporters: ["json", ["lcov", { projectRoot: "../../" }], "json-summary", "text"],
   reporters: [
     "default",
