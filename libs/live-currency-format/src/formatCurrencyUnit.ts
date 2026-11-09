@@ -111,7 +111,7 @@ const buildFormatState = (
     staticSignificantDigits,
   } = resolvedOptions;
   const { magnitude, code } = unit;
-  const floatValue = value.div(new BigNumber(10).pow(magnitude));
+  const floatValue = value.shiftedBy(-magnitude);
   const floatValueAbs = floatValue.abs();
   const minimumFractionDigits = showAllDigits ? magnitude : 0;
   const maximumFractionDigits = disableRounding
