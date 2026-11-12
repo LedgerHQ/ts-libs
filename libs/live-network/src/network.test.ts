@@ -354,13 +354,31 @@ describe("request implementations", () => {
   it.each<[LiveNetworkRequest<never>, unknown, number]>([
     [{ method: "POST" }, new Error("x"), 1],
     [{ method: "GET", timeout: 1 }, { status: 404 }, 1],
+    [{ method: "GET", timeout: 1 }, { status: 429 }, 3],
     [{ method: "GET", timeout: 1 }, { status: 503 }, 3],
     [{ method: "GET", timeout: 1 }, new Error("x"), 3],
+    [{ method: "GET", timeout: 1, retry: false }, { status: 429 }, 1],
+    [{ method: "GET", timeout: 1, retry: false }, { status: 503 }, 1],
+    [{ method: "GET", timeout: 1, retry: false }, new Error("x"), 1],
+    [{ method: "GET", timeout: 1, retry: { statuses: [503] } }, { status: 429 }, 1],
+    [{ method: "GET", timeout: 1, retry: { statuses: [503] } }, { status: 503 }, 3],
+    [{ method: "GET", timeout: 1, retry: { statuses: [] } }, new Error("x"), 3],
+    [{ method: "POST", retry: { statuses: [503] } }, { status: 503 }, 1],
   ])("issues %j on %j exactly %i time(s)", async (request, error, calls) => {
     mockedAxios.mockRejectedValue(error);
 
     await expect(settle(newImplementation({ url: "/u", ...request }))).resolves.toBe(error);
     expect(mockedAxios).toHaveBeenCalledTimes(calls);
+  });
+
+  it("does not forward the retry option to axios", async () => {
+    mockedAxios.mockResolvedValue({ data: "d", status: 200, headers: new AxiosHeaders() });
+
+    await expect(
+      newImplementation({ url: "/u", method: "GET", timeout: 1, retry: false }),
+    ).resolves.toMatchObject({ data: "d", status: 200 });
+    expect(mockedAxios).toHaveBeenCalledWith({ url: "/u", method: "GET", timeout: 1 });
+    expect(mockedAxios.mock.calls[0][0]).not.toHaveProperty("retry");
   });
 
   it.each<["GET" | "POST", number]>([
