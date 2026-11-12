@@ -175,6 +175,11 @@ export type LiveNetworkRequest<T> = {
   params?: unknown;
   data?: T;
   timeout?: number;
+  /**
+   * GET retry policy. `false` disables retries; `{ statuses }` retries only listed HTTP statuses.
+   * Omitting this option preserves the default retry policy.
+   */
+  retry?: false | { statuses: number[] };
 };
 export type LiveNetworkResponse<T> = {
   headers?: AxiosResponse<T>["headers"];
@@ -186,7 +191,8 @@ export type LiveNetworkResponse<T> = {
 const retryableHttpStatusCodes = [408, 413, 429, 500, 502, 503, 504, 521, 522, 524];
 
 /**
- * Network call
+ * Network call. GET requests retry according to the global policy by default; use
+ * `retry: false` to disable retries or `retry: { statuses }` to replace the retryable set.
  * @param request
  * @returns
  */
@@ -204,18 +210,22 @@ export const newImplementation = async <T = unknown, U = unknown>(
       request.timeout = getNetworkState().getCallsTimeout;
     }
 
-    response = await retry(() => axios(request), {
-      maxRetry: getNetworkState().getCallsRetry,
-      retryCondition: error => {
-        if (error && error.status) {
-          // not all status codes are retryable
-          return retryableHttpStatusCodes.includes(error.status);
-        }
-        return true;
-      },
-    });
+    const { retry: retryOption, ...axiosRequest } = request;
+    response =
+      retryOption === false
+        ? await axios(axiosRequest)
+        : await retry(() => axios(axiosRequest), {
+            maxRetry: getNetworkState().getCallsRetry,
+            retryCondition: error => {
+              if (error && error.status) {
+                return (retryOption?.statuses ?? retryableHttpStatusCodes).includes(error.status);
+              }
+              return retryOption === undefined;
+            },
+          });
   } else {
-    response = await axios(request);
+    const { retry: _retry, ...axiosRequest } = request;
+    response = await axios(axiosRequest);
   }
 
   const { data, status, headers } = response;

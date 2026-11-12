@@ -22,6 +22,11 @@
 - `seconds(n) / minutes(n) / hours(n)` — helpers that produce `CacheOptions` for use with `lru-cache`.
 - `makeBatcher(request, params)` — batches concurrent calls within the same event-loop tick into a single upstream request (via `@ledgerhq/live-network/batcher`).
 
-## Usage context
+## Per-request GET retry policy
+`newImplementation` keeps its existing default GET retry behavior when `retry` is omitted. Pass
+`retry: false` to make a GET request once, or `retry: { statuses: [429, 503] }` to retry only the
+listed HTTP statuses. This supports the existing `coin-near` Nearblocks consumer; it does not invite
+new consumers to this deprecated package.
+
 
 Used throughout `libs/ledger-live-common`, coin modules, and service clients. Both desktop and mobile depend on it transitively. It is the single place to configure global request behaviour (timeouts, base URLs via `@ledgerhq/live-env`).
