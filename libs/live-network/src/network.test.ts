@@ -356,6 +356,13 @@ describe("request implementations", () => {
     [{ method: "GET", timeout: 1 }, { status: 404 }, 1],
     [{ method: "GET", timeout: 1 }, { status: 503 }, 3],
     [{ method: "GET", timeout: 1 }, new Error("x"), 3],
+    [{ method: "GET", timeout: 1 }, { status: 429 }, 3],
+    [{ method: "GET", timeout: 1, retry: false }, { status: 429 }, 1],
+    [{ method: "GET", timeout: 1, retry: false }, { status: 503 }, 1],
+    [{ method: "GET", timeout: 1, retry: false }, new Error("x"), 1],
+    [{ method: "GET", timeout: 1, retry: { statuses: [503] } }, { status: 429 }, 1],
+    [{ method: "GET", timeout: 1, retry: { statuses: [503] } }, { status: 503 }, 3],
+    [{ method: "GET", timeout: 1, retry: { statuses: [] } }, new Error("x"), 3],
   ])("issues %j on %j exactly %i time(s)", async (request, error, calls) => {
     mockedAxios.mockRejectedValue(error);
 
