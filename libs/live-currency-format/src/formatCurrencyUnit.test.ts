@@ -285,5 +285,20 @@ describe("formatCurrencyUnit", () => {
       const result = formatCurrencyUnit(unit, value, { showCode: false });
       expect(result).toBe("123.45");
     });
+
+    test("does not depend on DECIMAL_PLACES for large magnitudes", () => {
+      const unit: Unit = {
+        name: "Test",
+        code: "TST",
+        magnitude: 45,
+        showAllDigits: true,
+        prefixCode: false,
+      };
+      const result = formatCurrencyUnit(unit, new BigNumber(1), {
+        disableRounding: true,
+        useGrouping: false,
+      });
+      expect(result).toBe(`0.${"0".repeat(44)}1`);
+    });
   });
 });
