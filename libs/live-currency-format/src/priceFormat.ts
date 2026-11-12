@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import type { Unit } from "./types";
 import {
   formatCurrencyUnit,
@@ -19,6 +19,10 @@ const priceOptions = (absFiat: number, unit: Unit) => {
 
 const valueFromUnit = (valueInUnit: BigNumber, unit: Unit): BigNumber =>
   valueInUnit.shiftedBy(unit.magnitude);
+
+// bignumber.js v11 STRICT throws on non-numbers; NaN keeps the formatter's empty-state path.
+const fiatValue = (fiatAmount: number, unit: Unit): BigNumber =>
+  valueFromUnit(new BigNumber(typeof fiatAmount === "number" ? fiatAmount : NaN), unit);
 
 /** Format a fiat price expressed in the unit's smallest atom. */
 export function formatPrice(
@@ -42,7 +46,7 @@ export function formatPriceFragment(
   fiatAmount: number,
   locale: string,
 ): FormatterValue {
-  return formatCurrencyUnitFragment(unit, valueFromUnit(new BigNumber(fiatAmount), unit), {
+  return formatCurrencyUnitFragment(unit, fiatValue(fiatAmount, unit), {
     locale,
     showCode: true,
     showAllDigits: true,
@@ -57,7 +61,7 @@ export function formatSignedFiatVariation(fiatAmount: number, unit: Unit, locale
   const opts = priceOptions(abs, unit);
   const resolution = 10 ** -(unit.magnitude + opts.subMagnitude);
   const at = (v: number, alwaysShowSign = false): string =>
-    formatCurrencyUnit(unit, valueFromUnit(new BigNumber(v), unit), {
+    formatCurrencyUnit(unit, fiatValue(v, unit), {
       locale,
       showCode: true,
       showAllDigits: true,

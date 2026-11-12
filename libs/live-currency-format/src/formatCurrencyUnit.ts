@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import { getSeparators } from "./localeUtility";
 import { toLocaleString } from "./BigNumberToLocaleString";
 import { forceLTRIfRTL } from "./rtl";
