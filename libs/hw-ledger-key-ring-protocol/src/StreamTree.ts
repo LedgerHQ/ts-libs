@@ -5,14 +5,6 @@ import { IndexedTree } from "./IndexedTree";
 /**
  *
  */
-export interface ApplicationStreams {
-  appStream: CommandStream;
-  appRootStream: CommandStream;
-}
-
-/**
- *
- */
 export interface StreamTreeCreateOpts {
   topic?: Uint8Array;
 }
