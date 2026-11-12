@@ -1,5 +1,12 @@
 # @ledgerhq/ledger-key-ring-protocol
 
+## 1.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`376a320`](https://github.com/LedgerHQ/ts-libs/commit/376a320f5e611e8c49c5cac86d4ab44c2c40e92a)]:
+  - @ledgerhq/live-network@3.4.0
+
 ## 1.2.0
 
 ### Minor Changes

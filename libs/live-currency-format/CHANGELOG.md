@@ -1,5 +1,11 @@
 # @ledgerhq/live-currency-format
 
+## 0.17.1
+
+### Patch Changes
+
+- [#181](https://github.com/LedgerHQ/ts-libs/pull/181) [`b315b1a`](https://github.com/LedgerHQ/ts-libs/commit/b315b1ac01072346e9be05ae0fdc8ee30e972fea) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Scale units with `shiftedBy` instead of dividing or multiplying by `10^magnitude`, so formatting no longer depends on the global `DECIMAL_PLACES` config. A magnitude above 20 previously formatted 1 atom as `0.000…` under the default config.
+
 ## 0.17.0
 
 ### Minor Changes

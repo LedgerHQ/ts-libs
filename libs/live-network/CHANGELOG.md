@@ -1,5 +1,11 @@
 # @ledgerhq/live-network
 
+## 3.4.0
+
+### Minor Changes
+
+- [#184](https://github.com/LedgerHQ/ts-libs/pull/184) [`376a320`](https://github.com/LedgerHQ/ts-libs/commit/376a320f5e611e8c49c5cac86d4ab44c2c40e92a) Thanks [@cted-ledger](https://github.com/cted-ledger)! - Add a per-request `retry` option to GET requests: `false` sends the request once, `{ statuses }` sets the retried HTTP statuses for that request. Without it, behaviour is unchanged.
+
 ## 3.3.0
 
 ### Minor Changes
