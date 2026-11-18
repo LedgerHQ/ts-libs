@@ -12,6 +12,7 @@ import { getTokenState } from "./utils";
 
 export class AuthSDK {
   private token?: Promise<KeycloakToken>;
+  private readonly refreshedTokens = new WeakSet<KeycloakToken>();
   private readonly idP: IdentityProvider;
   private readonly createPkcePair: CreatePkcePair;
   private readonly keycloakService: KeycloakService;
@@ -56,7 +57,14 @@ export class AuthSDK {
 
   private async getToken(forceRefresh = false): Promise<KeycloakToken> {
     if (forceRefresh) {
-      this.token = undefined;
+      // only refresh needs the previous token; a failed concurrent renewal leaves none to renew
+      const previousToken = this.idP.refresh ? await this.token?.catch(() => undefined) : undefined;
+      // a rejected token that refresh produced may be refused again: authenticate, so that
+      // retries cannot loop between refresh and rejection
+      const renewable =
+        previousToken && !this.refreshedTokens.has(previousToken) ? previousToken : undefined;
+      this.token = this.createTokenPromise(renewable);
+      return this.token;
     }
 
     if (this.token) {
@@ -67,7 +75,7 @@ export class AuthSDK {
       }
 
       if (this.token === cachedToken) {
-        this.token = this.createTokenPromise();
+        this.token = this.createTokenPromise(token);
       }
       return this.token;
     }
@@ -76,14 +84,31 @@ export class AuthSDK {
     return this.token;
   }
 
-  private createTokenPromise(): Promise<KeycloakToken> {
-    const tokenPromise = this.fetchToken().catch(error => {
+  private createTokenPromise(previousToken?: KeycloakToken): Promise<KeycloakToken> {
+    const tokenPromise = this.refreshOrFetch(previousToken).catch(error => {
       if (this.token === tokenPromise) {
         this.token = undefined;
       }
       throw error;
     });
     return tokenPromise;
+  }
+
+  private async refreshOrFetch(previousToken?: KeycloakToken): Promise<KeycloakToken> {
+    if (previousToken !== undefined && this.idP.refresh !== undefined) {
+      try {
+        const refreshedToken = await this.idP.refresh(previousToken);
+        if (refreshedToken.accessToken) {
+          this.refreshedTokens.add(refreshedToken);
+          return refreshedToken;
+        }
+      } catch {
+        return this.fetchToken();
+      }
+    }
+    // no Keycloak refresh_token grant here: Ledger Live's client (ledger-keycloak) refuses it
+    // (401 unauthorized_client on staging), so a provider without refresh authenticates again
+    return this.fetchToken();
   }
 
   private async fetchToken(): Promise<KeycloakToken> {
