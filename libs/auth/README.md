@@ -11,6 +11,7 @@ Authentication helpers for Ledger applications using Keycloak-based OAuth2/OIDC 
 - Retrieves identity-provider challenges from Keycloak
 - Supports the OAuth2 authorization code flow
 - Caches access tokens in memory and re-authenticates when they expire
+- Renews an expired or rejected token with the identity provider's optional `refresh` before authenticating again, and authenticates when a refreshed token is rejected
 - Retries an authenticated operation with a fresh token when requested by the caller
 - Resolves a static or lazily provided Keycloak base URL
 
