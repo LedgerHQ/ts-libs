@@ -1,4 +1,4 @@
-import { genericWithJWT } from "./auth";
+import { genericWithJWT, isJwtRefusal } from "./auth";
 import { TrustchainNotAllowed, TrustchainOutdated } from "./errors";
 import { JWT } from "./types";
 
@@ -122,5 +122,77 @@ describe("genericWithJWT refresh failures", () => {
 
     await expect(genericWithJWT(job, initialJwt, auth, jest.fn())).rejects.toBe(second);
     expect(job).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["a refreshed jwt", httpError("JWT is expired, call /refresh"), refreshedJwt],
+    ["a re-authenticated jwt", httpError("Unexpected client error"), reauthedJwt],
+  ])("reports a refusal of %s as a jwt refusal, without another retry", async (_, first, jwt) => {
+    const job = jest
+      .fn()
+      .mockRejectedValueOnce(first)
+      .mockRejectedValueOnce(httpError("JWT contains no permission"));
+
+    const error = await genericWithJWT(
+      job,
+      initialJwt,
+      jest.fn().mockResolvedValue(reauthedJwt),
+      jest.fn().mockResolvedValue(refreshedJwt),
+    ).catch(e => e);
+
+    expect(isJwtRefusal(error)).toBe(true);
+    expect(job).toHaveBeenLastCalledWith(jwt);
+    expect(job).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["a refreshed jwt", httpError("JWT is expired, call /refresh"), refreshedJwt],
+    ["a re-authenticated jwt", httpError("Unexpected client error"), reauthedJwt],
+  ])("maps a path mismatch with %s to TrustchainOutdated", async (_, first, jwt) => {
+    const job = jest
+      .fn()
+      .mockRejectedValueOnce(first)
+      .mockRejectedValueOnce(httpError("path does not match"));
+
+    await expect(
+      genericWithJWT(
+        job,
+        initialJwt,
+        jest.fn().mockResolvedValue(reauthedJwt),
+        jest.fn().mockResolvedValue(refreshedJwt),
+      ),
+    ).rejects.toBeInstanceOf(TrustchainOutdated);
+    expect(job).toHaveBeenLastCalledWith(jwt);
+    expect(job).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("isJwtRefusal", () => {
+  it("is true for the backend refusing the jwt in the job or in a refresh", async () => {
+    const refusal = httpError("JWT contains no permission");
+    const fromJob = await genericWithJWT(
+      jest.fn().mockRejectedValue(refusal),
+      initialJwt,
+      jest.fn(),
+      jest.fn(),
+    ).catch(e => e);
+    const fromRefresh = await genericWithJWT(
+      jest.fn(),
+      initialJwt,
+      jest.fn(),
+      jest.fn().mockRejectedValue(refusal),
+      "refresh",
+    ).catch(e => e);
+
+    expect(fromJob).toBeInstanceOf(TrustchainNotAllowed);
+    expect(fromJob).toHaveProperty("name", "TrustchainNotAllowed");
+    expect(isJwtRefusal(fromJob)).toBe(true);
+    expect(isJwtRefusal(fromRefresh)).toBe(true);
+  });
+
+  it("is false for any other error", () => {
+    expect(isJwtRefusal(new TrustchainNotAllowed())).toBe(false);
+    expect(isJwtRefusal(new TrustchainOutdated())).toBe(false);
+    expect(isJwtRefusal(httpError("JWT contains no permission"))).toBe(false);
   });
 });

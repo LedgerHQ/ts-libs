@@ -344,4 +344,12 @@ export class MockSDK implements TrustchainSDK {
   closeStreamWithDevice(): Promise<boolean> {
     return Promise.reject(new Error("closeStreamWithDevice is not mocked"));
   }
+
+  useDeviceJwt(): void {}
+
+  cacheDeviceJwt(): void {}
+
+  hasOwnDeviceJwt(): boolean {
+    return false;
+  }
 }
