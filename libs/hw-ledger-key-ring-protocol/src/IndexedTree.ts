@@ -53,28 +53,4 @@ export class IndexedTree<T> {
     }
     return new IndexedTree(this.node, children);
   }
-
-  /// Adds a subtree to the tree
-  public addChild(path: number[], child: IndexedTree<T>): IndexedTree<T> {
-    if (path.length === 0) {
-      return this;
-    }
-    if (path.length == 1) {
-      const children = new Map(this.children);
-      children.set(path[0], child);
-      return new IndexedTree(this.node, children);
-    }
-    const index = path[0];
-    const rest = path.slice(1);
-    const children = new Map(this.children);
-
-    if (this.children.has(index)) {
-      const subTree = this.children.get(index)!.addChild(rest, child);
-      children.set(index, subTree);
-    } else {
-      const subTree = new IndexedTree<T>(null).addChild(rest, child);
-      children.set(index, subTree);
-    }
-    return new IndexedTree(this.node, children);
-  }
 }

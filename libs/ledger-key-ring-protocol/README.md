@@ -75,6 +75,10 @@ rm mocks/scenarios/<slug>.json
 COIN_APPS=/path/to/coin-apps pnpm --filter @ledgerhq/ledger-key-ring-protocol e2e
 ```
 
+The snapshot stores the staging JWTs, which the gitleaks pre-commit hook rejects. Replace each
+distinct JWT with a stable `redacted-jwt-<n>` before committing, the same one everywhere it
+appears: the replay compares the recorded `Authorization` headers with the ones the SDK sends.
+
 Set `RUN_EVEN_IF_SNAPSHOT_EXISTS=1` to run a scenario live without overwriting its snapshot
 (handy to check it still passes against staging). Speculos loopback traffic is filtered out
 of the snapshot, and compressed response bodies are decoded before being stored, so the

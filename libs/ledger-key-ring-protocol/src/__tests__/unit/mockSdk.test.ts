@@ -147,6 +147,111 @@ describe("MockSDK", () => {
     await expect(bob.restoreTrustchain(trustchain, bobCredentials)).resolves.toEqual(trustchain);
   });
 
+  it("addMember ignores the case of an id already there", async () => {
+    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
+    const member = {
+      id: credentials.pubkey.toUpperCase(),
+      name: "a",
+      permissions: Permissions.OWNER,
+    };
+
+    await sdk.addMember(trustchain, credentials, member);
+
+    expect(await sdk.getMembers(trustchain, credentials)).toHaveLength(1);
+  });
+
+  it("addMember refuses a member already there with other permissions", async () => {
+    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
+    const member = { id: credentials.pubkey, name: "a", permissions: Permissions.KEY_READER };
+
+    await expect(sdk.addMember(trustchain, credentials, member)).rejects.toThrow(
+      `member ${credentials.pubkey} is already in m/0'/16'/0' with permissions ${Permissions.OWNER}`,
+    );
+  });
+
+  it("addMember treats a signed permission mask as the stored permissions", async () => {
+    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
+    const permissions = Permissions.OWNER & ~Permissions.KEY_REVOKER;
+    const bob = { id: "mock-pub-key-bob", name: "bob", permissions };
+
+    await sdk.addMember(trustchain, credentials, bob);
+    await sdk.addMember(trustchain, credentials, bob);
+
+    expect(await sdk.getMembers(trustchain, credentials)).toContainEqual({
+      ...bob,
+      permissions: permissions >>> 0,
+    });
+  });
+
+  it.each([2 ** 32 + 1, 1.5, -(2 ** 31) - 1])(
+    "addMember refuses permissions %s that do not fit in 32 bits, as the real SDK",
+    async permissions => {
+      const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
+      const bob = { id: "mock-pub-key-bob", name: "bob", permissions };
+
+      await expect(sdk.addMember(trustchain, credentials, bob)).rejects.toThrow(
+        `permissions ${permissions} do not fit in 32 bits`,
+      );
+      expect(await sdk.getMembers(trustchain, credentials)).toHaveLength(1);
+    },
+  );
+
+  it("addMember refuses a closed application, as the real SDK", async () => {
+    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
+    const other = makeSdk("alice-2", 17);
+    const otherCredentials = await other.initMemberCredentials();
+    await other.getOrCreateTrustchain("", otherCredentials);
+    await sdk.destroyApplication(trustchain, credentials);
+    const bobCredentials = await makeSdk("bob").initMemberCredentials();
+    const bob = { id: bobCredentials.pubkey, name: "bob", permissions: Permissions.OWNER };
+
+    const added = sdk.addMember(trustchain, credentials, bob);
+
+    await expect(added).rejects.toBeInstanceOf(TrustchainEjected);
+    await expect(added).rejects.toThrow("application stream m/0'/16'/0' is closed");
+    await other.destroyTrustchain(trustchain, otherCredentials);
+  });
+
+  it("gives the software member the requested permissions", async () => {
+    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials, {
+      softwareMemberPermissions: Permissions.KEY_READER,
+    });
+
+    await expect(sdk.getMembers(trustchain, credentials)).resolves.toEqual([
+      { id: credentials.pubkey, name: "alice", permissions: Permissions.KEY_READER },
+    ]);
+  });
+
+  it("stores a signed software member permission mask unsigned, as the stream does", async () => {
+    const permissions = Permissions.OWNER & ~Permissions.KEY_REVOKER;
+    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials, {
+      softwareMemberPermissions: permissions,
+    });
+
+    await expect(sdk.getMembers(trustchain, credentials)).resolves.toEqual([
+      { id: credentials.pubkey, name: "alice", permissions: 0xfffffffb },
+    ]);
+  });
+
+  it("refuses software member permissions that do not fit in 32 bits, as the real SDK", async () => {
+    await expect(
+      sdk.getOrCreateTrustchain("", credentials, { softwareMemberPermissions: 2 ** 32 }),
+    ).rejects.toThrow(`permissions ${2 ** 32} do not fit in 32 bits`);
+  });
+
+  it.each([
+    ["a path", { path: "m/0'/16'/0'/1'/0'" }],
+    ["a device", { deviceId: "device" }],
+  ])("rejects addMember with %s, which it does not mock", async (_name, options) => {
+    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
+    const member = { id: credentials.pubkey, name: "other", permissions: Permissions.OWNER };
+
+    await expect(sdk.addMember(trustchain, credentials, member, options)).rejects.toThrow(
+      "addMember with a path or a device is not mocked",
+    );
+    expect(await sdk.getMembers(trustchain, credentials)).toHaveLength(1);
+  });
+
   it("addMember creates the application when it does not exist yet", async () => {
     const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
     const other = makeSdk("alice-other-app", 17);
