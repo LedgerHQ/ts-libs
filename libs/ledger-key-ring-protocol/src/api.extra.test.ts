@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { WalletAuthInvalidAuthorizationError, WalletAuthInvalidTokenError } from "@ledgerhq/auth";
-import getApi from "./api";
+import getApi, { trustchainApiRoot } from "./api";
 import { CHALLENGE } from "./__mocks__/challenge";
 
 const BASE = "https://trustchain.test";
@@ -254,5 +254,42 @@ describe("trustchain api", () => {
 
       await expect(api.fetchStatus()).resolves.toEqual({ name: "trustchain", version: "1" });
     });
+  });
+
+  describe("with a base URL ending with /v1", () => {
+    const v1Api = getApi(`${BASE}/v1/`);
+
+    it("calls the versioned, openid and status endpoints from the API root", async () => {
+      server.use(
+        http.get(`${BASE}/v1/challenge`, () => HttpResponse.json({ json: {}, tlv: "00" })),
+        http.post(`${BASE}/openid/v1/authenticate`, () => HttpResponse.json("code")),
+        http.get(`${BASE}/_info`, () => HttpResponse.json({ name: "trustchain" })),
+      );
+
+      await expect(v1Api.getAuthenticationChallenge()).resolves.toEqual({ json: {}, tlv: "00" });
+      await expect(
+        v1Api.oidcPostChallengeResponse({
+          challenge: CHALLENGE.json,
+          signature: {
+            credential: { version: 0, curveId: 0, signAlgorithm: 0, publicKey: "" },
+            signature: "",
+          },
+        }),
+      ).resolves.toBe("code");
+      await expect(v1Api.fetchStatus()).resolves.toEqual({ name: "trustchain" });
+    });
+  });
+});
+
+describe("trustchainApiRoot", () => {
+  it.each([
+    ["https://trustchain.test", "https://trustchain.test"],
+    ["https://trustchain.test/", "https://trustchain.test"],
+    ["https://trustchain.test//", "https://trustchain.test"],
+    ["https://trustchain.test/v1", "https://trustchain.test"],
+    ["https://trustchain.test/v1/", "https://trustchain.test"],
+    ["https://trustchain.test/prefix", "https://trustchain.test/prefix"],
+  ])("maps %s to %s", (baseUrl, root) => {
+    expect(trustchainApiRoot(baseUrl)).toBe(root);
   });
 });

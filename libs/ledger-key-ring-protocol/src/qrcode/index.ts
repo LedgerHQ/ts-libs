@@ -1,5 +1,6 @@
 import { Permissions, crypto } from "@ledgerhq/hw-ledger-key-ring-protocol";
 import WebSocket from "isomorphic-ws";
+import { trustchainApiRoot } from "../api";
 import { MemberCredentials, Trustchain, TrustchainMember } from "../types";
 import { MessageCipher, makeCipher, makeMessageCipher } from "./cipher";
 import {
@@ -205,7 +206,7 @@ export async function createQRCodeHostInstance({
 }): Promise<Trustchain | void> {
   const ephemeralKey = crypto.randomKeypair();
   const publisher = crypto.to_hex(ephemeralKey.publicKey);
-  const url = `${trustchainApiBaseUrl.replace("http", "ws")}/v1/qr?host=${publisher}`;
+  const url = `${trustchainApiRoot(trustchainApiBaseUrl).replace("http", "ws")}/v1/qr?host=${publisher}`;
   const ws = new WebSocket(url);
   function send(message: Message) {
     ws.send(JSON.stringify(message));

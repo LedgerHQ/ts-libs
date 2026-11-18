@@ -82,14 +82,26 @@ export type PutCommandsRequest = {
   blocks: string[];
 };
 
+/**
+ * The API root of a Trustchain base URL, without trailing slashes or `/v1`: some callers pass a
+ * base URL that already ends with `/v1`, others the host root.
+ */
+export function trustchainApiRoot(apiBaseURL: string): string {
+  let end = apiBaseURL.length;
+  while (apiBaseURL[end - 1] === "/") end--;
+  const root = apiBaseURL.slice(0, end);
+  return root.endsWith("/v1") ? root.slice(0, -"/v1".length) : root;
+}
+
 const getApi = (apiBaseURL: string) => {
+  const apiRoot = trustchainApiRoot(apiBaseURL);
   /**
    * Authentication flow:
    */
 
   async function getAuthenticationChallenge(): Promise<{ json: Challenge; tlv: string }> {
     const { data } = await network<{ json: Challenge; tlv: string }>({
-      url: `${apiBaseURL}/v1/challenge`,
+      url: `${apiRoot}/v1/challenge`,
       method: "GET",
     });
     return data;
@@ -100,7 +112,7 @@ const getApi = (apiBaseURL: string) => {
     signature: ChallengeSignature;
   }): Promise<JWT> {
     const { data } = await network<APIJWT>({
-      url: `${apiBaseURL}/v1/authenticate`,
+      url: `${apiRoot}/v1/authenticate`,
       method: "POST",
       data: request,
     });
@@ -112,7 +124,7 @@ const getApi = (apiBaseURL: string) => {
 
   async function refreshAuth(jwt: JWT): Promise<JWT> {
     const { data } = await network<APIJWT>({
-      url: `${apiBaseURL}/v1/refresh`,
+      url: `${apiRoot}/v1/refresh`,
       method: "GET",
       headers: {
         Authorization: `Bearer ${jwt.accessToken}`,
@@ -129,7 +141,7 @@ const getApi = (apiBaseURL: string) => {
     signature: WeakChallengeSignature;
   }): Promise<string> {
     const { data } = await network<unknown>({
-      url: `${apiBaseURL}/openid/v1/authenticate`,
+      url: `${apiRoot}/openid/v1/authenticate`,
       method: "POST",
       data: request,
     });
@@ -158,7 +170,7 @@ const getApi = (apiBaseURL: string) => {
     }
 
     const { data } = await network<unknown>({
-      url: `${apiBaseURL}/openid/v1/token`,
+      url: `${apiRoot}/openid/v1/token`,
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -175,7 +187,7 @@ const getApi = (apiBaseURL: string) => {
 
   async function oidcExchangeToken(idpToken: string, client_id: string): Promise<KeycloakToken> {
     const { data } = await network<unknown>({
-      url: `${apiBaseURL}/openid/v1/exchange`,
+      url: `${apiRoot}/openid/v1/exchange`,
       method: "POST",
       data: { client_id },
       headers: {
@@ -204,7 +216,7 @@ const getApi = (apiBaseURL: string) => {
 
   async function getTrustchains(jwt: JWT): Promise<TrustchainsResponse> {
     const { data } = await network<TrustchainsResponse>({
-      url: `${apiBaseURL}/v1/trustchains`,
+      url: `${apiRoot}/v1/trustchains`,
       method: "GET",
       headers: {
         Authorization: `Bearer ${jwt.accessToken}`,
@@ -215,7 +227,7 @@ const getApi = (apiBaseURL: string) => {
 
   async function getTrustchain(jwt: JWT, trustchain_id: string): Promise<TrustchainResponse> {
     const { data } = await network<TrustchainResponse>({
-      url: `${apiBaseURL}/v1/trustchain/${trustchain_id}`,
+      url: `${apiRoot}/v1/trustchain/${trustchain_id}`,
       method: "GET",
       headers: {
         Authorization: `Bearer ${jwt.accessToken}`,
@@ -230,7 +242,7 @@ const getApi = (apiBaseURL: string) => {
     commandStream: string,
   ): Promise<void> {
     await network<void>({
-      url: `${apiBaseURL}/v1/trustchain/${trustchain_id}/derivation`,
+      url: `${apiRoot}/v1/trustchain/${trustchain_id}/derivation`,
       method: "POST",
       headers: {
         Authorization: `Bearer ${jwt.accessToken}`,
@@ -242,7 +254,7 @@ const getApi = (apiBaseURL: string) => {
 
   async function postSeed(jwt: JWT, commandStream: string): Promise<void> {
     await network<void>({
-      url: `${apiBaseURL}/v1/seed`,
+      url: `${apiRoot}/v1/seed`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -258,7 +270,7 @@ const getApi = (apiBaseURL: string) => {
     request: PutCommandsRequest,
   ): Promise<void> {
     await network<void>({
-      url: `${apiBaseURL}/v1/trustchain/${trustchain_id}/commands`,
+      url: `${apiRoot}/v1/trustchain/${trustchain_id}/commands`,
       method: "PUT",
       headers: {
         Authorization: `Bearer ${jwt.accessToken}`,
@@ -269,7 +281,7 @@ const getApi = (apiBaseURL: string) => {
 
   async function deleteTrustchain(jwt: JWT, trustchain_id: string): Promise<void> {
     await network<void>({
-      url: `${apiBaseURL}/v1/trustchain/${trustchain_id}`,
+      url: `${apiRoot}/v1/trustchain/${trustchain_id}`,
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${jwt.accessToken}`,
@@ -279,7 +291,7 @@ const getApi = (apiBaseURL: string) => {
 
   async function fetchStatus(): Promise<StatusAPIResponse> {
     const { data } = await network<StatusAPIResponse>({
-      url: `${apiBaseURL}/_info`,
+      url: `${apiRoot}/_info`,
       method: "GET",
     });
     return data;

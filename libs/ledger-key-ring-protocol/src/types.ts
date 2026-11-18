@@ -337,6 +337,26 @@ export interface TrustchainSDK {
     path: string,
     callbacks?: TrustchainDeviceCallbacks,
   ): Promise<boolean>;
+
+  /**
+   * Hand the SDK a device (seed) login obtained elsewhere for the same device, e.g. by another
+   * Ledger Sync client, so the next getOrCreateTrustchain does not log the device in again. It
+   * survives that call once; invalidateJwt drops it. If the backend refuses it, the SDK drops it
+   * and logs the device in once, as it does for a refused login it obtained itself, even from the
+   * same device: TrustchainNotAllowed comes only if the new login is refused too.
+   */
+  useDeviceJwt(jwt: JWT): void;
+
+  /**
+   * Like useDeviceJwt, for later hardware operations only: getOrCreateTrustchain still drops it.
+   */
+  cacheDeviceJwt(jwt: JWT): void;
+
+  /**
+   * Whether the SDK caches a device login it obtained itself, not one given to useDeviceJwt or
+   * cacheDeviceJwt.
+   */
+  hasOwnDeviceJwt(): boolean;
 }
 
 export interface TrustchainDeviceCallbacks {
