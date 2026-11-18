@@ -3,7 +3,7 @@ import { AuthSDK } from "@ledgerhq/auth";
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import type { Challenge as ChallengeJson, WeakChallengeSignature } from "../api";
-import { LkrpIdentityProvider } from "../LKRPIdentityProvider";
+import { LkrpIdentityProvider, type LkrpIdentityProviderStore } from "../LKRPIdentityProvider";
 import { getInitialStore } from "../store";
 import type { MemberCredentials } from "../types";
 import { credentialForPubKey, initMemberCredentials, liveAuthentication } from "../utils";
@@ -24,6 +24,8 @@ const AUTHORIZATION_CODE = "auth-code-xyz";
 const LKRP_TOKEN = makeJwt({ sub: "idp", exp: 4102444800 });
 const KEYCLOAK_JWT = makeJwt({ sub: "keycloak", exp: 4102444800 });
 const REFRESH_TOKEN = makeJwt({ sub: "refresh", exp: 4102444800 });
+const RENEWED_LKRP_TOKEN = makeJwt({ sub: "idp-renewed", exp: 4102444800 });
+const RENEWED_KEYCLOAK_JWT = makeJwt({ sub: "keycloak-renewed", exp: 4102444800 });
 const EXPECTED_ATTESTATION = crypto.to_hex(liveAuthentication(TRUSTCHAIN_ID));
 
 const MEMBER_CREDENTIALS: MemberCredentials = {
@@ -39,12 +41,14 @@ describe("LkrpIdentityProvider (integration, MSW)", () => {
     lkrpAuth: jest.fn<Response, [{ request: Request }]>(),
     lkrpToken: jest.fn<Response, [{ request: Request }]>(),
     tokenExchange: jest.fn<Response, [{ request: Request }]>(),
+    lkrpRefresh: jest.fn<Response, [{ request: Request }]>(),
   };
   const server = setupServer(
     http.get(`${KEYCLOAK_OPENID_URL}/auth`, endpoints.keycloakAuth),
     http.post(`https://${CHALLENGE.json.host}/openid/v1/authenticate`, endpoints.lkrpAuth),
     http.post(`https://${CHALLENGE.json.host}/openid/v1/token`, endpoints.lkrpToken),
     http.post(`https://${CHALLENGE.json.host}/openid/v1/exchange`, endpoints.tokenExchange),
+    http.get(`https://${CHALLENGE.json.host}/openid/v1/token/refresh`, endpoints.lkrpRefresh),
   );
 
   beforeAll(() => {
@@ -137,6 +141,162 @@ describe("LkrpIdentityProvider (integration, MSW)", () => {
     });
     expect(loadTrustchainStore).toHaveBeenCalledTimes(2);
     expect(endpoints.lkrpAuth).toHaveBeenCalledTimes(1);
+  });
+
+  describe("refresh", () => {
+    const config = {
+      clientId: CLIENT_ID,
+      keycloakBaseUrl: KEYCLOAK_BASE_URL,
+      keycloakRealm: REALM,
+      disablePkce: true,
+    };
+    const retryable = { status: 401 };
+    const retryOnce = () => {
+      let retried = false;
+      return (result: unknown) => {
+        if (retried || result !== retryable) return false;
+        retried = true;
+        return true;
+      };
+    };
+
+    beforeEach(() => {
+      endpoints.keycloakAuth.mockImplementation(() =>
+        HttpResponse.json({ tlv: CHALLENGE.tlv, json: CHALLENGE.json }),
+      );
+      endpoints.lkrpAuth.mockImplementation(() => HttpResponse.json(AUTHORIZATION_CODE));
+      endpoints.lkrpToken.mockImplementation(() =>
+        HttpResponse.json({ access_token: LKRP_TOKEN, token_type: "Bearer" }),
+      );
+      endpoints.tokenExchange.mockImplementation(({ request }) =>
+        HttpResponse.json({
+          access_token:
+            request.headers.get("Authorization") === `Bearer ${RENEWED_LKRP_TOKEN}`
+              ? RENEWED_KEYCLOAK_JWT
+              : KEYCLOAK_JWT,
+          token_type: "Bearer",
+        }),
+      );
+      endpoints.lkrpRefresh.mockImplementation(() =>
+        HttpResponse.json({ access_token: RENEWED_LKRP_TOKEN }),
+      );
+    });
+
+    it("renews the IdP token of the last login instead of signing a new challenge", async () => {
+      const query = jest.fn().mockResolvedValueOnce(retryable).mockResolvedValueOnce({ ok: true });
+
+      await new AuthSDK(config, { provider: createIdentityProvider(TRUSTCHAIN_ID) }).withToken({
+        queryFn: query,
+        refreshAndRetryWhen: retryOnce(),
+      });
+
+      expect(endpoints.lkrpRefresh).toHaveBeenCalledTimes(1);
+      expect(endpoints.lkrpRefresh.mock.calls[0][0].request.headers.get("Authorization")).toBe(
+        `Bearer ${LKRP_TOKEN}`,
+      );
+      expect(query).toHaveBeenLastCalledWith({
+        accessToken: RENEWED_KEYCLOAK_JWT,
+        tokenType: "Bearer",
+      });
+      expect(query).toHaveBeenCalledTimes(2);
+      expect(endpoints.lkrpAuth).toHaveBeenCalledTimes(1);
+      expect(endpoints.keycloakAuth).toHaveBeenCalledTimes(1);
+    });
+
+    it("authenticates again when the member changed since the last login", async () => {
+      let trustchainStore = {
+        trustchain: { rootId: TRUSTCHAIN_ID },
+        memberCredentials: MEMBER_CREDENTIALS,
+      };
+      const query = jest.fn().mockImplementation(async () => {
+        if (query.mock.calls.length > 1) return { ok: true };
+        trustchainStore = {
+          trustchain: { rootId: TRUSTCHAIN_ID },
+          memberCredentials: initMemberCredentials(),
+        };
+        return retryable;
+      });
+
+      await new AuthSDK(config, {
+        provider: new LkrpIdentityProvider(() => trustchainStore),
+      }).withToken({ queryFn: query, refreshAndRetryWhen: retryOnce() });
+
+      expect(endpoints.lkrpRefresh).not.toHaveBeenCalled();
+      expect(endpoints.lkrpAuth).toHaveBeenCalledTimes(2);
+      expect(await endpoints.lkrpAuth.mock.calls[1][0].request.json()).toHaveProperty(
+        "signature.credential.publicKey",
+        trustchainStore.memberCredentials.pubkey,
+      );
+    });
+
+    it("renews an expired token again from the IdP token of the previous renewal", async () => {
+      const expiringKeycloakJwt = makeJwt({ sub: "keycloak", exp: Math.floor(Date.now() / 1000) });
+      endpoints.tokenExchange.mockImplementation(() =>
+        HttpResponse.json({ access_token: expiringKeycloakJwt, token_type: "Bearer" }),
+      );
+      const sdk = new AuthSDK(config, { provider: createIdentityProvider(TRUSTCHAIN_ID) });
+
+      await sdk.withToken({ queryFn });
+      await sdk.withToken({ queryFn });
+      await sdk.withToken({ queryFn });
+
+      expect(
+        endpoints.lkrpRefresh.mock.calls.map(([{ request }]) =>
+          request.headers.get("Authorization"),
+        ),
+      ).toEqual([`Bearer ${LKRP_TOKEN}`, `Bearer ${RENEWED_LKRP_TOKEN}`]);
+      expect(endpoints.lkrpAuth).toHaveBeenCalledTimes(1);
+    });
+
+    it("authenticates again with the attestation when Ledger Sync was turned on since the login", async () => {
+      let trustchainStore: LkrpIdentityProviderStore = {
+        trustchain: null,
+        memberCredentials: MEMBER_CREDENTIALS,
+      };
+      const query = jest.fn().mockImplementation(async () => {
+        if (query.mock.calls.length > 1) return { ok: true };
+        trustchainStore = {
+          trustchain: { rootId: TRUSTCHAIN_ID },
+          memberCredentials: MEMBER_CREDENTIALS,
+        };
+        return retryable;
+      });
+
+      await new AuthSDK(config, {
+        provider: new LkrpIdentityProvider(() => trustchainStore),
+      }).withToken({ queryFn: query, refreshAndRetryWhen: retryOnce() });
+
+      expect(endpoints.lkrpRefresh).not.toHaveBeenCalled();
+      expect(endpoints.lkrpAuth).toHaveBeenCalledTimes(2);
+      expect(await endpoints.lkrpAuth.mock.calls[0][0].request.json()).not.toHaveProperty(
+        "signature.attestation",
+      );
+      expect(await endpoints.lkrpAuth.mock.calls[1][0].request.json()).toHaveProperty(
+        "signature.attestation",
+        EXPECTED_ATTESTATION,
+      );
+    });
+
+    it("authenticates again when the backend refuses the IdP token refresh", async () => {
+      endpoints.lkrpRefresh.mockImplementation(() => new HttpResponse(null, { status: 401 }));
+      const query = jest.fn().mockResolvedValueOnce(retryable).mockResolvedValueOnce({ ok: true });
+
+      await new AuthSDK(config, { provider: createIdentityProvider(TRUSTCHAIN_ID) }).withToken({
+        queryFn: query,
+        refreshAndRetryWhen: retryOnce(),
+      });
+
+      expect(endpoints.lkrpRefresh).toHaveBeenCalledTimes(1);
+      expect(endpoints.lkrpAuth).toHaveBeenCalledTimes(2);
+      expect(query).toHaveBeenLastCalledWith({ accessToken: KEYCLOAK_JWT, tokenType: "Bearer" });
+    });
+
+    it("has nothing to refresh before the first login", async () => {
+      await expect(createIdentityProvider(TRUSTCHAIN_ID).refresh()).rejects.toThrow(
+        "no IdP token of the current member to refresh",
+      );
+      expect(endpoints.lkrpRefresh).not.toHaveBeenCalled();
+    });
   });
 
   it("retrieves a Keycloak JWT with PKCE", async () => {
