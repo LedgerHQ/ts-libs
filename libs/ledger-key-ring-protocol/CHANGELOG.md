@@ -1,5 +1,13 @@
 # @ledgerhq/ledger-key-ring-protocol
 
+## 1.2.2
+
+### Patch Changes
+
+- [#195](https://github.com/LedgerHQ/ts-libs/pull/195) [`b095d58`](https://github.com/LedgerHQ/ts-libs/commit/b095d58233a21c37f4a16d2651ab47357da3f1f0) Thanks [@gre-ledger](https://github.com/gre-ledger)! - Bump ws to 8.23.0 and axios to 1.21.1
+- Updated dependencies [[`b095d58`](https://github.com/LedgerHQ/ts-libs/commit/b095d58233a21c37f4a16d2651ab47357da3f1f0)]:
+  - @ledgerhq/live-network@3.4.1
+
 ## 1.2.1
 
 ### Patch Changes
