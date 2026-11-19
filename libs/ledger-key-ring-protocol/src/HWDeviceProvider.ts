@@ -3,8 +3,9 @@ import { UserRefusedOnDevice } from "@ledgerhq/hw-transport/errors";
 import { ApduDevice } from "@ledgerhq/hw-ledger-key-ring-protocol/ApduDevice";
 import { StatusCodes } from "@ledgerhq/hw-transport";
 import { crypto, device } from "@ledgerhq/hw-ledger-key-ring-protocol";
+import { log } from "@ledgerhq/logs";
 import getApi from "./api";
-import { genericWithJWT } from "./auth";
+import { genericWithJWT, isJwtRefusal } from "./auth";
 import { AuthCachePolicy, JWT, TrustchainDeviceCallbacks, WithDevice } from "./types";
 import { TrustchainNotAllowed } from "./errors";
 
@@ -22,6 +23,8 @@ export class HWDeviceProvider {
    */
   private withDevice: WithDevice;
   private jwt?: JWT;
+  // the cached jwt came from setJwt and no device login has replaced it
+  private jwtBorrowed = false;
   private api: ReturnType<typeof getApi>;
 
   constructor(apiBaseURL: string, withDevice: WithDevice) {
@@ -29,22 +32,39 @@ export class HWDeviceProvider {
     this.withDevice = withDevice;
   }
 
-  public withJwt<T>(
+  public async withJwt<T>(
     deviceId: string,
     job: (jwt: JWT) => Promise<T>,
     policy?: AuthCachePolicy,
     callbacks?: TrustchainDeviceCallbacks,
   ): Promise<T> {
-    return genericWithJWT(
-      jwt => {
-        this.jwt = jwt;
-        return job(jwt);
-      },
-      this.jwt,
-      () => this._authWithDevice(deviceId, callbacks),
-      (jwt: JWT) => this.api.refreshAuth(jwt),
-      policy,
-    );
+    let deviceLoggedIn = false;
+    const run = () =>
+      genericWithJWT(
+        jwt => {
+          this.jwt = jwt;
+          return job(jwt);
+        },
+        this.jwt,
+        () => {
+          deviceLoggedIn = true;
+          return this._authWithDevice(deviceId, callbacks);
+        },
+        (jwt: JWT) => this.api.refreshAuth(jwt),
+        policy,
+      );
+    try {
+      return await run();
+    } catch (error) {
+      // the cached login, borrowed or our own, is not tied to a device and its permissions date
+      // from the login: on a refusal, log the requested device in once, even the same device
+      if (deviceLoggedIn || !isJwtRefusal(error)) throw error;
+      log("trustchain", "cached device JWT refused -> logging the device in", {
+        borrowed: this.jwtBorrowed,
+      });
+      this.clearJwt();
+      return run();
+    }
   }
 
   public async withHw<T>(
@@ -83,6 +103,21 @@ export class HWDeviceProvider {
 
   public clearJwt() {
     this.jwt = undefined;
+    this.jwtBorrowed = false;
+  }
+
+  /**
+   * Use a device login obtained elsewhere for the same device (e.g. by another Ledger Sync
+   * client) for the next `withJwt(…, "cache")`, like a login this provider obtained itself.
+   */
+  public setJwt(jwt: JWT) {
+    this.jwt = jwt;
+    this.jwtBorrowed = true;
+  }
+
+  /** Whether a login this provider obtained itself, not one given to setJwt, is cached. */
+  public hasOwnJwt(): boolean {
+    return this.jwt !== undefined && !this.jwtBorrowed;
   }
 
   private async _authWithDevice(
@@ -93,7 +128,7 @@ export class HWDeviceProvider {
     const data = crypto.from_hex(challenge.tlv);
     const seedId = await this.withHw(deviceId, hw => hw.getSeedId(data), callbacks);
     const signature = crypto.to_hex(seedId.signature);
-    return this.api.postChallengeResponse({
+    const jwt = await this.api.postChallengeResponse({
       challenge: challenge.json,
       signature: {
         credential: seedId.pubkeyCredential.toJSON(),
@@ -101,5 +136,7 @@ export class HWDeviceProvider {
         attestation: crypto.to_hex(seedId.attestationResult),
       },
     });
+    this.jwtBorrowed = false;
+    return jwt;
   }
 }

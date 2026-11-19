@@ -68,6 +68,8 @@ export class SDK implements TrustchainSDK {
 
   private jwt: JWT | undefined = undefined;
   private jwtHash = "";
+  // set by useDeviceJwt: the next getOrCreateTrustchain keeps the supplied device login
+  private deviceJwtPending = false;
   withAuth<T>(
     trustchain: Trustchain,
     memberCredentials: MemberCredentials,
@@ -118,7 +120,12 @@ export class SDK implements TrustchainSDK {
     if (callbacks?.softwareMemberPermissions !== undefined) {
       assertPermissions(callbacks.softwareMemberPermissions);
     }
-    this.invalidateJwt();
+    const usesSuppliedDeviceJwt = this.deviceJwtPending;
+    this.deviceJwtPending = false;
+    this.jwt = undefined;
+    if (!usesSuppliedDeviceJwt || this.hwDeviceProvider.hasOwnJwt()) {
+      this.hwDeviceProvider.clearJwt();
+    }
 
     let type = TrustchainResultType.restored;
 
@@ -431,8 +438,23 @@ export class SDK implements TrustchainSDK {
     return true;
   }
 
+  useDeviceJwt(jwt: JWT): void {
+    this.hwDeviceProvider.setJwt(jwt);
+    this.deviceJwtPending = true;
+  }
+
+  cacheDeviceJwt(jwt: JWT): void {
+    this.hwDeviceProvider.setJwt(jwt);
+    this.deviceJwtPending = false;
+  }
+
+  hasOwnDeviceJwt(): boolean {
+    return this.hwDeviceProvider.hasOwnJwt();
+  }
+
   invalidateJwt() {
     this.jwt = undefined;
+    this.deviceJwtPending = false;
     this.hwDeviceProvider.clearJwt();
   }
 

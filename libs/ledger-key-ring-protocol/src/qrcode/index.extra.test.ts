@@ -16,8 +16,10 @@ const createRelay = async () => {
   const server = new WebSocket.Server({ port: 0 });
   await new Promise<void>(resolve => server.on("listening", () => resolve()));
   const sockets: WebSocket[] = [];
-  server.on("connection", ws => {
+  const paths: string[] = [];
+  server.on("connection", (ws, request) => {
     sockets.push(ws);
+    paths.push(request.url ?? "");
     ws.on("message", message => {
       for (const peer of sockets) {
         if (peer !== ws && peer.readyState === WebSocket.OPEN) peer.send(message);
@@ -27,6 +29,7 @@ const createRelay = async () => {
   const { port } = server.address() as AddressInfo;
   return {
     baseUrl: `ws://localhost:${port}`,
+    paths,
     terminateSockets: () => sockets.forEach(ws => ws.terminate()),
     close: () =>
       new Promise<void>(resolve => {
@@ -130,6 +133,28 @@ describe("Trustchain QR Code (extra)", () => {
       expect(error.message).toBe("nope");
       host.close();
     });
+  });
+
+  it("connects the host to /v1/qr when the base URL already ends with /v1", async () => {
+    let resolveUrl: (url: string) => void;
+    const urlPromise = new Promise<string>(resolve => {
+      resolveUrl = resolve;
+    });
+    const hostP = createQRCodeHostInstance({
+      trustchainApiBaseUrl: `${relay.baseUrl}/v1/`,
+      onDisplayQRCode: url => resolveUrl(url),
+      onDisplayDigits: jest.fn(),
+      addMember: jest.fn(() => Promise.resolve(TRUSTCHAIN)),
+      memberCredentials: credentials(),
+      memberName: "foo",
+    });
+    hostP.catch(() => {});
+
+    expect(await urlPromise).toMatch(new RegExp(`^${relay.baseUrl}/v1/qr\\?host=`));
+    for (let i = 0; i < 50 && relay.paths.length === 0; i++) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    expect(relay.paths).toEqual([expect.stringMatching(/^\/v1\/qr\?host=/)]);
   });
 
   it("rejects the host with QRCodeWSClosed when the socket closes before the end", async () => {
