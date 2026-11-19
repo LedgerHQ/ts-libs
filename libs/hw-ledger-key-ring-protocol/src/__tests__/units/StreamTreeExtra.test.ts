@@ -66,6 +66,21 @@ describe("StreamTree structure", () => {
     expect(copy.getRootHash()).toEqual(original.getRootHash());
     expect(copy.blocks).toHaveLength(original.blocks.length);
   });
+
+  it("keeps a child stream given before its parent", async () => {
+    const { alice, bobKey, tree, path } = await appTree();
+    const childPath = `${path}/1'`;
+    const full = await tree.share(childPath, alice, bobKey, "Bob", Permissions.OWNER);
+    const root = full.getRoot();
+    const parent = full.getChild(path);
+    const child = full.getChild(childPath);
+    if (!parent || !child) throw new Error("missing stream");
+
+    const restored = StreamTree.from(child, root, parent);
+
+    expect(restored.getChild(path)).toBe(parent);
+    expect(restored.getChild(childPath)).toBe(child);
+  });
 });
 
 describe("StreamTree.getPublishKeyEvent", () => {

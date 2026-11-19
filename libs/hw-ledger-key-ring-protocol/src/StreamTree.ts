@@ -244,7 +244,8 @@ export class StreamTree {
     streamMap.delete("");
     streamMap.forEach((stream, path) => {
       const p = DerivationPath.toIndexArray(path);
-      tree = tree.addChild(p, new IndexedTree(stream));
+      // updateChild keeps the children already added, so a parent may come after its child
+      tree = tree.updateChild(p, stream);
     });
     return new StreamTree(tree);
   }

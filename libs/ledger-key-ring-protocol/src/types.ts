@@ -70,6 +70,62 @@ export type TrustchainMember = {
 };
 
 /**
+ * A stream of the trustchain: an application stream or a subtree below it.
+ */
+export type TrustchainStream = {
+  path: string;
+  members: TrustchainMember[];
+  closed: boolean;
+};
+
+export type GetStreamsOptions = {
+  /**
+   * The path to list from, compared by whole components: `m/0'/1'` does not match `m/0'/16'/0'`.
+   * With a trailing `/`, only the streams below it.
+   */
+  pathPrefix: string;
+} & (
+  | {
+      /**
+       * Skip the member permissions check of the login.
+       */
+      ignorePermissionsChecks?: boolean;
+      deviceId?: never;
+      callbacks?: never;
+    }
+  | {
+      /**
+       * Read with this device's login instead of the member credentials, which are then not used.
+       */
+      deviceId: string;
+      /**
+       * Device interaction callbacks.
+       */
+      callbacks?: TrustchainDeviceCallbacks;
+      ignorePermissionsChecks?: never;
+    }
+);
+
+export type AddMemberOptions = {
+  /**
+   * The stream to add the member to. Defaults to the latest stream of the SDK's application.
+   */
+  path?: string;
+} & (
+  | { deviceId?: never; callbacks?: never }
+  | {
+      /**
+       * The device that authenticates and signs instead of the member credentials.
+       */
+      deviceId: string;
+      /**
+       * Device interaction callbacks.
+       */
+      callbacks?: TrustchainDeviceCallbacks;
+    }
+);
+
+/**
  * The TrustchainSDKContext is a context that is used to initialize the TrustchainSDK.
  */
 export type TrustchainSDKContext = {
@@ -203,12 +259,19 @@ export interface TrustchainSDK {
   ): Promise<Trustchain>;
 
   /**
-   * add a member to the application trustchain
+   * add a member to the application trustchain, or with options.path to another existing stream:
+   * m/0'/<application>'/<generation>' followed by any number of <object>'/<generation>' pairs.
+   * Does nothing when the member is already in the stream with the same permissions, and refuses
+   * other permissions. Refuses a missing stream (see createStreamWithDevice), a closed stream
+   * (TrustchainEjected without options.path, as restoreTrustchain), a generation replaced by a
+   * newer one, and a stream below an ancestor stream that is missing, closed or not the latest
+   * generation.
    */
   addMember(
     trustchain: Trustchain,
     memberCredentials: MemberCredentials,
     member: TrustchainMember,
+    options?: AddMemberOptions,
   ): Promise<void>;
 
   /**
@@ -239,6 +302,41 @@ export interface TrustchainSDK {
   decryptUserData(trustchain: Trustchain, data: Uint8Array): Promise<Uint8Array>;
 
   invalidateJwt(): void;
+
+  /**
+   * Every stream at `options.pathPrefix` or below it, except the root. The backend only
+   * returns the latest generation of a stream: once `…/<n+1>'` exists, `…/<n>'` is no longer listed.
+   */
+  getStreams(
+    trustchain: Trustchain,
+    memberCredentials: MemberCredentials,
+    options: GetStreamsOptions,
+  ): Promise<TrustchainStream[]>;
+
+  /**
+   * Create the stream at `path` (laid out as in addMember) with the device, with `member` in it.
+   * Only the device can derive the key of a new stream. Refuses a stream that already exists
+   * (add members to it with addMember), a generation replaced by a newer one, and the ancestor
+   * streams addMember refuses.
+   */
+  createStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    path: string,
+    member: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<void>;
+
+  /**
+   * Close the stream at `path` (laid out as in addMember) with the device. Resolves to false
+   * when it is missing (including a generation replaced by a newer one) or already closed.
+   */
+  closeStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    path: string,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<boolean>;
 }
 
 export interface TrustchainDeviceCallbacks {
@@ -248,4 +346,10 @@ export interface TrustchainDeviceCallbacks {
 
 export interface GetOrCreateTrustchainCallbacks extends TrustchainDeviceCallbacks {
   onInitialResponse?: (trustchains: TrustchainsResponse) => void;
+  /**
+   * Permission bits given to the software member when this call adds it.
+   * Defaults to Permissions.OWNER. A member that is already enrolled keeps its permissions, even
+   * broader ones.
+   */
+  softwareMemberPermissions?: number;
 }

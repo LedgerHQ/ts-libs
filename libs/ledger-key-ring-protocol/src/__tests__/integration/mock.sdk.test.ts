@@ -13,6 +13,9 @@ const nonMockableScenarios = [
   "userRefusesAuth", // can't simulate device interaction at the moment
   "userRefusesRemoveMember", // can't simulate device interaction at the moment
   "ringInitPreservesLedgerSyncMember", // scenario does not clean up its trustchain (shared in-memory mock state)
+  "agentStreamsWithDevice", // the mock SDK does not implement the stream methods
+  "applicationStreamRotationWithDevice", // the mock SDK does not implement the stream methods
+  "latestApplicationStreamWithDevice", // the mock SDK does not implement the stream methods
 ];
 
 const scenarioFolder = path.join(__dirname, "../../../tests/scenarios");

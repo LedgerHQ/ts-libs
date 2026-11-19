@@ -243,21 +243,15 @@ describe("TLV", () => {
 });
 
 describe("IndexedTree edge cases", () => {
-  it("addChild with an empty path returns the same tree", () => {
-    const tree = new IndexedTree<string>("root");
-    expect(tree.addChild([], new IndexedTree("x"))).toBe(tree);
-  });
-
-  it("addChild creates missing intermediate nodes with null values", () => {
-    const leaf = new IndexedTree("leaf");
-    const tree = new IndexedTree<string>("root").addChild([1, 2], leaf);
+  it("updateChild creates missing intermediate nodes with null values", () => {
+    const tree = new IndexedTree<string>("root").updateChild([1, 2], "leaf");
     expect(tree.findChild([1])?.getValue()).toBeNull();
-    expect(tree.findChild([1, 2])).toBe(leaf);
+    expect(tree.findChild([1, 2])?.getValue()).toBe("leaf");
   });
 
-  it("addChild replaces an existing subtree without mutating the original", () => {
+  it("updateChild replaces a value without mutating the original", () => {
     const original = new IndexedTree<string>("root").updateChild([1, 2], "old");
-    const replaced = original.addChild([1, 2], new IndexedTree("new"));
+    const replaced = original.updateChild([1, 2], "new");
     expect(original.findChild([1, 2])?.getValue()).toBe("old");
     expect(replaced.findChild([1, 2])?.getValue()).toBe("new");
   });

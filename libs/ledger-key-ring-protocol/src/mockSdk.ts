@@ -1,4 +1,6 @@
 import {
+  AddMemberOptions,
+  GetOrCreateTrustchainCallbacks,
   JWT,
   MemberCredentials,
   Trustchain,
@@ -9,10 +11,12 @@ import {
   TrustchainResultType,
   TrustchainSDK,
   TrustchainSDKContext,
+  TrustchainStream,
 } from "./types";
 import { Permissions } from "@ledgerhq/hw-ledger-key-ring-protocol";
 import { TrustchainEjected } from "./errors";
 import getApi from "./api";
+import { assertPermissions, samePermissions } from "./permissions";
 
 const mockedLiveCredentialsPrivateKey = "mock-private-key";
 const ROOT_ID = "mock-root-id";
@@ -112,8 +116,11 @@ export class MockSDK implements TrustchainSDK {
   async getOrCreateTrustchain(
     deviceId: string,
     memberCredentials: MemberCredentials,
-    callbacks?: TrustchainDeviceCallbacks,
+    callbacks?: GetOrCreateTrustchainCallbacks,
   ): Promise<TrustchainResult> {
+    if (callbacks?.softwareMemberPermissions !== undefined) {
+      assertPermissions(callbacks.softwareMemberPermissions);
+    }
     this.invalidateJwt();
     assertLiveCredentials(memberCredentials);
     const applicationId = this.context.applicationId;
@@ -147,7 +154,7 @@ export class MockSDK implements TrustchainSDK {
       app.members.push({
         id: memberCredentials.pubkey,
         name: this.context.name,
-        permissions: Permissions.OWNER,
+        permissions: (callbacks?.softwareMemberPermissions ?? Permissions.OWNER) >>> 0,
       });
     }
     return { type, trustchain: buildTrustchain(ROOT_ID, applicationId, app) };
@@ -279,11 +286,16 @@ export class MockSDK implements TrustchainSDK {
     return { trustchainDestroyed: false };
   }
 
-  addMember(
+  async addMember(
     trustchain: Trustchain,
     memberCredentials: MemberCredentials,
     member: TrustchainMember,
+    options?: AddMemberOptions,
   ): Promise<void> {
+    if (options?.path !== undefined || options?.deviceId !== undefined) {
+      throw new Error("addMember with a path or a device is not mocked");
+    }
+    assertPermissions(member.permissions);
     assertTrustchain(trustchain);
     assertLiveCredentials(memberCredentials);
     const applicationId = this.context.applicationId;
@@ -294,11 +306,17 @@ export class MockSDK implements TrustchainSDK {
       app = { index: 0, closed: false, members: [] };
       root.apps.set(applicationId, app);
     }
-    if (app.members.some(m => m.id === member.id)) {
-      return Promise.resolve();
+    const path = `m/0'/${applicationId}'/${app.index}'`;
+    if (app.closed) {
+      throw new TrustchainEjected(`application stream ${path} is closed`);
     }
-    app.members.push(member);
-    return Promise.resolve();
+    const current = app.members.find(m => m.id.toLowerCase() === member.id.toLowerCase());
+    if (current && !samePermissions(current.permissions, member.permissions)) {
+      throw new Error(
+        `member ${member.id} is already in ${path} with permissions ${current.permissions}`,
+      );
+    }
+    if (!current) app.members.push({ ...member, permissions: member.permissions >>> 0 });
   }
 
   encryptUserData(trustchain: Trustchain, input: Uint8Array): Promise<Uint8Array> {
@@ -313,5 +331,17 @@ export class MockSDK implements TrustchainSDK {
 
   invalidateJwt(): void {
     this.deviceJwtAcquired = false;
+  }
+
+  getStreams(): Promise<TrustchainStream[]> {
+    return Promise.reject(new Error("getStreams is not mocked"));
+  }
+
+  createStreamWithDevice(): Promise<void> {
+    return Promise.reject(new Error("createStreamWithDevice is not mocked"));
+  }
+
+  closeStreamWithDevice(): Promise<boolean> {
+    return Promise.reject(new Error("closeStreamWithDevice is not mocked"));
   }
 }

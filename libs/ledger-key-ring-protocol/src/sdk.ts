@@ -11,10 +11,14 @@ import {
   TrustchainResultType,
   TrustchainLifecycle,
   GetOrCreateTrustchainCallbacks,
+  TrustchainStream,
+  AddMemberOptions,
+  GetStreamsOptions,
 } from "./types";
 import {
   crypto,
   Challenge,
+  CommandStream,
   CommandStreamEncoder,
   StreamTree,
   Permissions,
@@ -33,6 +37,7 @@ import {
 } from "./errors";
 import { HWDeviceProvider } from "./HWDeviceProvider";
 import { genericWithJWT } from "./auth";
+import { assertPermissions, samePermissions } from "./permissions";
 import {
   convertLiveCredentialsToKeyPair,
   credentialForPubKey,
@@ -42,6 +47,7 @@ import {
 
 type WithJwt = <T>(job: (jwt: JWT) => Promise<T>) => Promise<T>;
 type WithDevice = <T>(job: (device: Device) => Promise<T>) => Promise<T>;
+type Signer = { withJwt: WithJwt; withDevice: WithDevice };
 
 export class SDK implements TrustchainSDK {
   private context: TrustchainSDKContext;
@@ -109,6 +115,9 @@ export class SDK implements TrustchainSDK {
     topic?: Uint8Array,
     currentTrustchain?: Trustchain,
   ): Promise<TrustchainResult> {
+    if (callbacks?.softwareMemberPermissions !== undefined) {
+      assertPermissions(callbacks.softwareMemberPermissions);
+    }
     this.invalidateJwt();
 
     let type = TrustchainResultType.restored;
@@ -183,7 +192,7 @@ export class SDK implements TrustchainSDK {
       streamTree = await this.pushMember(streamTree, path, trustchainRootId, withJwt, withHw, {
         id: memberCredentials.pubkey,
         name: this.context.name,
-        permissions: Permissions.OWNER,
+        permissions: callbacks?.softwareMemberPermissions ?? Permissions.OWNER,
       });
     }
 
@@ -334,21 +343,92 @@ export class SDK implements TrustchainSDK {
     trustchain: Trustchain,
     memberCredentials: MemberCredentials,
     member: TrustchainMember,
+    options: AddMemberOptions = {},
   ): Promise<void> {
-    const withJwt: WithJwt = f => this.withAuth(trustchain, memberCredentials, f);
-    const { streamTree, applicationRootPath } = await withJwt(jwt =>
-      this.fetchTrustchainAndResolve(jwt, trustchain.rootId, this.context.applicationId),
-    );
-    const softwareDevice = getSoftwareDevice(memberCredentials);
-    const withSw = (job: (device: Device) => Promise<StreamTree>) => job(softwareDevice);
+    const { path, deviceId, callbacks } = options;
+    if (path !== undefined) assertStreamPath(path);
+    assertPermissions(member.permissions);
+    const { withJwt, withDevice } =
+      deviceId === undefined
+        ? // a member of the stream at path alone has no permissions on the application path
+          this.memberSigner(trustchain, memberCredentials, path !== undefined)
+        : this.deviceSigner(deviceId, callbacks);
+    const target = await withJwt(jwt => this.fetchTarget(jwt, trustchain.rootId, path));
+    await assertCanAddMember(target.streamTree, target.path, member, options);
     await this.pushMember(
-      streamTree,
-      applicationRootPath,
+      target.streamTree,
+      target.path,
       trustchain.rootId,
       withJwt,
-      withSw,
+      withDevice,
       member,
     );
+  }
+
+  async getStreams(
+    trustchain: Trustchain,
+    memberCredentials: MemberCredentials,
+    options: GetStreamsOptions,
+  ): Promise<TrustchainStream[]> {
+    const { withJwt } =
+      options.deviceId === undefined
+        ? this.memberSigner(trustchain, memberCredentials, options.ignorePermissionsChecks)
+        : this.deviceSigner(options.deviceId, options.callbacks);
+    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    return Promise.all(
+      Object.keys(streamTree.serialize())
+        .filter(path => isAtOrBelow(path, options.pathPrefix))
+        .flatMap(path => {
+          // the root ("m/") has no child path
+          const stream = streamTree.getChild(path);
+          return stream ? [describeStream(path, stream)] : [];
+        }),
+    );
+  }
+
+  async createStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    path: string,
+    member: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<void> {
+    assertStreamPath(path);
+    assertPermissions(member.permissions);
+    const { withJwt, withDevice } = this.deviceSigner(deviceId, callbacks);
+    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    await assertCurrentGeneration(streamTree, path);
+    invariant(!streamTree.getChild(path), `stream ${path} already exists`);
+    await this.pushMember(streamTree, path, trustchain.rootId, withJwt, withDevice, member);
+  }
+
+  async closeStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    path: string,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<boolean> {
+    assertStreamPath(path);
+    this.jwt = undefined;
+    const { withJwt, withDevice } = this.deviceSigner(deviceId, callbacks);
+    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    const stream = streamTree.getChild(path);
+    if (!stream || (await stream.resolve()).isClosed()) return false;
+    const sendCloseStreamToAPI = await this.closeStream(
+      streamTree,
+      path,
+      trustchain.rootId,
+      withJwt,
+      withDevice,
+    );
+    await sendCloseStreamToAPI();
+    // deviceJwt have changed, proactively refresh it; the stream is closed already, so only log a failure
+    try {
+      await this.hwDeviceProvider.refreshJwt(deviceId, callbacks);
+    } catch (e) {
+      log("trustchain", "refreshing the device login after closing a stream failed", e);
+    }
+    return true;
   }
 
   invalidateJwt() {
@@ -499,6 +579,42 @@ export class SDK implements TrustchainSDK {
     return streamTree;
   }
 
+  private memberSigner(
+    trustchain: Trustchain,
+    memberCredentials: MemberCredentials,
+    ignorePermissionsChecks?: boolean,
+  ): Signer {
+    return {
+      withJwt: job =>
+        this.withAuth(trustchain, memberCredentials, job, undefined, ignorePermissionsChecks),
+      withDevice: job => job(getSoftwareDevice(memberCredentials)),
+    };
+  }
+
+  private deviceSigner(deviceId: string, callbacks?: TrustchainDeviceCallbacks): Signer {
+    return {
+      withJwt: job => this.hwDeviceProvider.withJwt(deviceId, job, "cache", callbacks),
+      withDevice: job => this.hwDeviceProvider.withHw(deviceId, job, callbacks),
+    };
+  }
+
+  private async fetchTarget(
+    jwt: JWT,
+    trustchainId: string,
+    path?: string,
+  ): Promise<{ streamTree: StreamTree; path: string }> {
+    if (path !== undefined) {
+      const { streamTree } = await this.fetchTrustchain(jwt, trustchainId);
+      return { streamTree, path };
+    }
+    const { streamTree, applicationRootPath } = await this.fetchTrustchainAndResolve(
+      jwt,
+      trustchainId,
+      this.context.applicationId,
+    );
+    return { streamTree, path: applicationRootPath };
+  }
+
   private async closeStream(
     streamTree: StreamTree,
     path: string,
@@ -549,6 +665,92 @@ function invariant(condition: unknown, message: string): asserts condition {
   }
 }
 
+const MAX_HARDENED_INDEX = 0x7fffffff;
+
+// streams are generations of a container (the application, then objects below it), and the
+// backend only returns streams laid out this way
+function assertStreamPath(path: string): void {
+  invariant(
+    /^m\/0'((\/(0|[1-9]\d*)'){2})+$/.test(path) &&
+      // a larger index overflows its 32-bit encoding, so the device would sign another path
+      path
+        .slice(2)
+        .split("/")
+        .every(component => Number.parseInt(component, 10) <= MAX_HARDENED_INDEX),
+    `path ${path} must be m/0'/<application>'/<generation>' followed by any number of hardened <object>'/<generation>' pairs`,
+  );
+}
+
+async function assertCanAddMember(
+  streamTree: StreamTree,
+  path: string,
+  member: TrustchainMember,
+  options: AddMemberOptions,
+): Promise<void> {
+  await assertCurrentGeneration(streamTree, path);
+  const stream = streamTree.getChild(path);
+  invariant(stream, `stream ${path} is missing, create it with createStreamWithDevice`);
+  const resolved = await stream.resolve();
+  if (resolved.isClosed()) {
+    if (options.path === undefined) {
+      throw new TrustchainEjected(`application stream ${path} is closed`);
+    }
+    throw new Error(`stream ${path} is closed`);
+  }
+  const current = resolved
+    .getMembersData()
+    .find(m => m.id.toLowerCase() === member.id.toLowerCase());
+  invariant(
+    !current || samePermissions(current.permissions, member.permissions),
+    `member ${member.id} is already in ${path} with permissions ${current?.permissions}`,
+  );
+}
+
+async function assertCurrentGeneration(streamTree: StreamTree, path: string): Promise<void> {
+  await assertBelowCurrentStreams(streamTree, path);
+  // the backend lists only the latest generation, so a replaced one usually looks missing too
+  const replacedBy = newerGeneration(streamTree, path);
+  invariant(!replacedBy, `stream ${path} was replaced by ${replacedBy}`);
+}
+
+// every member of an ancestor stream can derive the keys of the streams below it, so each ancestor
+// must be the current one: not replaced (members removed by the rotation still hold its key) nor
+// closed. The path is container/generation pairs (assertStreamPath), so each ancestor is a stream.
+async function assertBelowCurrentStreams(streamTree: StreamTree, path: string): Promise<void> {
+  const components = path.split("/");
+  for (let end = 4; end < components.length; end += 2) {
+    const ancestor = components.slice(0, end).join("/");
+    const stream = streamTree.getChild(ancestor);
+    invariant(
+      stream && !(await stream.resolve()).isClosed() && !newerGeneration(streamTree, ancestor),
+      `stream ${path} must be below open streams of the latest generation (${ancestor})`,
+    );
+  }
+}
+
+function isAtOrBelow(path: string, prefix: string): boolean {
+  return prefix.endsWith("/")
+    ? path.startsWith(prefix)
+    : path === prefix || path.startsWith(`${prefix}/`);
+}
+
+// the last component of a stream path is its generation
+function newerGeneration(streamTree: StreamTree, path: string): string | undefined {
+  const parent = path.slice(0, path.lastIndexOf("/") + 1);
+  const generation = Number.parseInt(path.slice(parent.length), 10);
+  return Object.keys(streamTree.serialize()).find(other => {
+    const rest = other.slice(parent.length);
+    return (
+      other.startsWith(parent) && /^\d+'$/.test(rest) && Number.parseInt(rest, 10) > generation
+    );
+  });
+}
+
+async function describeStream(path: string, stream: CommandStream): Promise<TrustchainStream> {
+  const resolved = await stream.resolve();
+  return { path, members: resolved.getMembersData(), closed: resolved.isClosed() };
+}
+
 async function isMemberInStreamTree(
   streamTree: StreamTree,
   path: string,
@@ -560,5 +762,5 @@ async function isMemberInStreamTree(
   }
   const resolved = await child.resolve();
   const members = resolved.getMembersData();
-  return members.some(m => m.id === member.id);
+  return members.some(m => m.id.toLowerCase() === member.id.toLowerCase());
 }
