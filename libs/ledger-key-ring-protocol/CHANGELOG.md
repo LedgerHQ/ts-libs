@@ -1,5 +1,16 @@
 # @ledgerhq/ledger-key-ring-protocol
 
+## 1.3.0
+
+### Minor Changes
+
+- [#192](https://github.com/LedgerHQ/ts-libs/pull/192) [`b51ffc1`](https://github.com/LedgerHQ/ts-libs/commit/b51ffc11f0a5211841d88b5b058e75d4a7ea962d) Thanks [@michalmisiejuk-ext-collab](https://github.com/michalmisiejuk-ext-collab)! - Add getStreams, createStreamWithDevice and closeStreamWithDevice to TrustchainSDK (a full implementation, such as a test fake, needs them), addMember options and softwareMemberPermissions to getOrCreateTrustchain. addMember now refuses a closed or replaced stream, a stream below one, a member already there with other permissions, and permissions that do not fit in 32 bits
+
+### Patch Changes
+
+- Updated dependencies [[`b51ffc1`](https://github.com/LedgerHQ/ts-libs/commit/b51ffc11f0a5211841d88b5b058e75d4a7ea962d)]:
+  - @ledgerhq/hw-ledger-key-ring-protocol@1.2.0
+
 ## 1.2.2
 
 ### Patch Changes
