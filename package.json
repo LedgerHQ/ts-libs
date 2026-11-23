@@ -19,7 +19,7 @@
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
-    "knip": "6.45.1",
+    "knip": "6.46.1",
     "nx": "^24.0.6",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
