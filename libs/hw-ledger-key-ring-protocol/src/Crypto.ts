@@ -43,14 +43,17 @@ export class DerivationPath {
     if (Array.isArray(path)) {
       return path;
     }
-    if (path.startsWith("m/")) {
-      path = path.substring(2);
+    const components = path === "m" || path.startsWith("m/") ? path.substring(2) : path;
+    if (components === "") {
+      return [];
     }
-    return path.split("/").map(s => {
-      if (s.endsWith("'") || s.endsWith("h")) {
-        return parseInt(s.substring(0, s.length - 1)) + 0x80000000;
+    return components.split("/").map(s => {
+      const match = /^(\d+)(['h]?)$/.exec(s);
+      const index = match ? Number(match[1]) : NaN;
+      if (!match || index > 0x7fffffff) {
+        throw new Error(`Invalid derivation path component "${s}" in "${path}"`);
       }
-      return parseInt(s);
+      return match[2] ? index + 0x80000000 : index;
     });
   }
 
