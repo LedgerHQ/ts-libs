@@ -173,6 +173,22 @@ const getApi = (apiBaseURL: string) => {
     }
   }
 
+  async function oidcRefreshToken(idpToken: string): Promise<string> {
+    const { data } = await network<unknown>({
+      url: `${apiBaseURL}/openid/v1/token/refresh`,
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${idpToken}`,
+      },
+    });
+
+    try {
+      return APIJWTSchema.parse(data).access_token;
+    } catch {
+      throw new WalletAuthInvalidTokenError();
+    }
+  }
+
   async function oidcExchangeToken(idpToken: string, client_id: string): Promise<KeycloakToken> {
     const { data } = await network<unknown>({
       url: `${apiBaseURL}/openid/v1/exchange`,
@@ -291,6 +307,7 @@ const getApi = (apiBaseURL: string) => {
     refreshAuth,
     oidcPostChallengeResponse,
     oidcExchangeAuthCode,
+    oidcRefreshToken,
     oidcExchangeToken,
     getTrustchains,
     getTrustchain,

@@ -20,8 +20,11 @@ export interface LkrpIdentityProviderStore {
   memberCredentials: MemberCredentials | null;
 }
 
+type IdPSession = { host: string; clientId: string; idPToken: string; owner: string };
+
 export class LkrpIdentityProvider implements IdentityProvider {
   readonly brokerId = "lkrp";
+  private session?: IdPSession;
 
   constructor(private readonly loadTrustchainStore: LoadTrustchainStore) {}
 
@@ -42,7 +45,25 @@ export class LkrpIdentityProvider implements IdentityProvider {
       request.codeVerifier,
     );
 
-    return api.oidcExchangeToken(idPToken, request.clientId);
+    const token = await api.oidcExchangeToken(idPToken, request.clientId);
+    this.session = { host, clientId: request.clientId, idPToken, owner: ownerOf(trustchainStore) };
+    return token;
+  }
+
+  /**
+   * Renews the IdP token of the last authentication instead of signing a new challenge. Throws,
+   * so AuthSDK authenticates again, when there was none or the trustchain or member changed since.
+   */
+  async refresh(): Promise<KeycloakToken> {
+    const session = this.session;
+    if (!session || session.owner !== ownerOf(await this.loadTrustchainStore())) {
+      throw new Error("no IdP token of the current member to refresh");
+    }
+    const api = getApi(`https://${session.host}`);
+    const idPToken = await api.oidcRefreshToken(session.idPToken);
+    const token = await api.oidcExchangeToken(idPToken, session.clientId);
+    this.session = { ...session, idPToken };
+    return token;
   }
 
   private async signChallenge(
@@ -79,6 +100,10 @@ export class LkrpIdentityProvider implements IdentityProvider {
       throw new WalletAuthInvalidChallengeError();
     }
   }
+}
+
+function ownerOf(store: LkrpIdentityProviderStore | undefined): string {
+  return `${store?.trustchain?.rootId ?? ""} ${store?.memberCredentials?.pubkey ?? ""}`;
 }
 
 type LoadTrustchainStore = () =>
