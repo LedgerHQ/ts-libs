@@ -1,66 +1,96 @@
 {
-  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: [
-    "github>LedgerHQ/renovate-config//base.json5",
-    "github>LedgerHQ/renovate-config//infra/gha.json5",
-    ":dependencyDashboard",
+    'github>LedgerHQ/renovate-config//base.json5',
+    'github>LedgerHQ/renovate-config//infra/gha.json5',
+    ':dependencyDashboard',
   ],
-  dependencyDashboard: true,
-  // The Renovate sync pushes changesets as this bot; Renovate must keep updating the branch anyway.
-  gitIgnoredAuthors: ["105061298+live-github-bot[bot]@users.noreply.github.com"],
-  labels: ["dependencies"],
+  dependencyDashboard: {
+    enabled: true,
+  },
+  gitIgnoredAuthors: [
+    '105061298+live-github-bot[bot]@users.noreply.github.com',
+  ],
+  labels: [
+    'dependencies',
+  ],
   automerge: false,
   vulnerabilityAlerts: {
     enabled: true,
-    labels: ["security"],
+    labels: [
+      'security',
+    ],
   },
   packageRules: [
     {
-      description: "Pin PRs: rebase only on conflict, not on every develop merge",
-      matchUpdateTypes: ["pin", "pinDigest"],
-      rebaseWhen: "conflicted",
-    },
-    {
-      description: "GitHub Actions internal",
-      matchManagers: ["github-actions"],
-      matchPackageNames: ["LedgerHQ/*", "ledgerhq/*"],
-      pinDigests: false,
-      labels: ["dependencies", "github_actions"],
-    },
-    {
-      description: "GitHub Actions external",
-      matchManagers: ["github-actions"],
-      matchPackageNames: ["!/^LedgerHQ/.*/", "!/^ledgerhq/.*/"],
-      pinDigests: true,
-      minimumReleaseAge: "15 days",
-      labels: ["dependencies", "github_actions"],
-    },
-    {
-      // Only tooling is grouped (not msw): lib bumps stay reviewable and revertable alone.
-      description: "Tooling linked updates",
-      matchManagers: ["npm"],
-      groupName: "tooling",
-      matchPackageNames: [
-        "@changesets/*",
-        "@commitlint/*",
-        "@jest/*",
-        "@nx/*",
-        "@swc/*",
-        "@types/*",
-        "/^eslint/",
-        "jest",
-        "jest-*",
-        "knip",
-        "nx",
-        "/^ox/",
-        "prettier",
-        "ts-jest",
-        "typescript",
+      description: 'Pin PRs: rebase only on conflict, not on every develop merge',
+      matchUpdateTypes: [
+        'pin',
+        'pinDigest',
       ],
-      minimumReleaseAge: "2 days",
+      rebaseWhen: 'conflicted',
+    },
+    {
+      description: 'GitHub Actions internal',
+      matchManagers: [
+        'github-actions',
+      ],
+      matchPackageNames: [
+        'LedgerHQ/*',
+        'ledgerhq/*',
+      ],
+      pinDigests: false,
+      labels: [
+        'dependencies',
+        'github_actions',
+      ],
+    },
+    {
+      description: 'GitHub Actions external',
+      matchManagers: [
+        'github-actions',
+      ],
+      matchPackageNames: [
+        '!/^LedgerHQ/.*/',
+        '!/^ledgerhq/.*/',
+      ],
+      pinDigests: true,
+      minimumReleaseAge: '15 days',
+      labels: [
+        'dependencies',
+        'github_actions',
+      ],
+    },
+    {
+      description: 'Tooling linked updates',
+      matchManagers: [
+        'npm',
+      ],
+      groupName: 'tooling',
+      matchPackageNames: [
+        '@changesets/*',
+        '@commitlint/*',
+        '@jest/*',
+        '@nx/*',
+        '@swc/*',
+        '@types/*',
+        '/^eslint/',
+        'jest',
+        'jest-*',
+        'knip',
+        'nx',
+        '/^ox/',
+        'prettier',
+        'ts-jest',
+        'typescript',
+      ],
+      minimumReleaseAge: '2 days',
     },
   ],
   prConcurrentLimit: 15,
   separateMinorPatch: true,
-  enabledManagers: ["npm", "github-actions"],
+  enabledManagers: [
+    'npm',
+    'github-actions',
+  ],
 }
