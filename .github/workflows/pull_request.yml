@@ -25,6 +25,8 @@ jobs:
       contents: read
       id-token: write
     uses: LedgerHQ/ledger-wallet-actions/.github/workflows/renovate-sync-reusable.yml@main
+    with:
+      renovate-login: gre-ledger
     secrets:
       GH_BOT_APP_ID: ${{ secrets.GH_BOT_APP_ID }}
       GH_BOT_PRIVATE_KEY: ${{ secrets.GH_BOT_PRIVATE_KEY }}
