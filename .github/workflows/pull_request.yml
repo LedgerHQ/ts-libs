@@ -15,14 +15,35 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
-  id-token: write
 
 jobs:
+  # Pushes the missing changeset to Renovate PRs; the push re-runs this workflow, so checks skip.
+  renovate-sync:
+    name: Renovate Sync
+    if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      contents: read
+      id-token: write
+    uses: LedgerHQ/ledger-wallet-actions/.github/workflows/renovate-sync-reusable.yml@main
+    secrets:
+      GH_BOT_APP_ID: ${{ secrets.GH_BOT_APP_ID }}
+      GH_BOT_PRIVATE_KEY: ${{ secrets.GH_BOT_PRIVATE_KEY }}
+
   checks:
     name: CI
+    needs: renovate-sync
+    if: ${{ !cancelled() && needs.renovate-sync.outputs.dirty != 'true' }}
     runs-on: public-ledgerhq-shared-medium
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
+      # CI is the required check, so a failed sync must fail it rather than let a bump merge without changeset.
+      - name: Renovate sync failed
+        if: needs.renovate-sync.result == 'failure'
+        run: exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -74,14 +95,11 @@ jobs:
           printf '</testExecutions>\n' >> sonar-executionTests-report.xml
 
       - name: SonarQube Scan
-        # Dependabot runs read only the Dependabot secret store, so SONAR_TOKEN is empty there.
-        if: github.actor != 'dependabot[bot]'
         uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: SonarQube Quality Gate
-        if: github.actor != 'dependabot[bot]'
         uses: SonarSource/sonarqube-quality-gate-action@7a5fffe8e523c40e0c740b6bc2712ab503e52efa # v1.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
