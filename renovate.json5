@@ -5,8 +5,9 @@
     "github>LedgerHQ/renovate-config//infra/gha.json5",
     ":dependencyDashboard",
   ],
-  dependencyDashboard: true,
-  // The Renovate sync pushes changesets as this bot; Renovate must keep updating the branch anyway.
+  dependencyDashboard: {
+    enabled: true,
+  },
   gitIgnoredAuthors: ["105061298+live-github-bot[bot]@users.noreply.github.com"],
   labels: ["dependencies"],
   automerge: false,
@@ -36,7 +37,6 @@
       labels: ["dependencies", "github_actions"],
     },
     {
-      // Only tooling is grouped (not msw): lib bumps stay reviewable and revertable alone.
       description: "Tooling linked updates",
       matchManagers: ["npm"],
       groupName: "tooling",
