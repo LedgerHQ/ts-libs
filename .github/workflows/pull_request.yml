@@ -25,6 +25,13 @@ jobs:
       contents: read
       id-token: write
     uses: LedgerHQ/ledger-wallet-actions/.github/workflows/renovate-sync-reusable.yml@main
+    with:
+      renovate-login: gre-ledger
+      runs-on: public-ledgerhq-shared-medium
+      registry: ${{ vars.ARTIFACTORY_URL }}
+      install-command: test -s ~/.npmrc && test -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" && test -z "${JFROG_TOKEN:-}" && test ! -e ~/.jfrog && ! cat /proc/$$/environ /proc/$PPID/environ | tr '\0' '\n' | grep -q '^ACTIONS_ID_TOKEN_REQUEST_TOKEN=' && echo HOOK-INSTALL-OK
+      command: test ! -e ~/.npmrc && test -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" && test -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" && test -z "${JFROG_TOKEN:-}" && test ! -e ~/.jfrog && ! cat /proc/$$/environ /proc/$PPID/environ | tr '\0' '\n' | grep -q '^ACTIONS_ID_TOKEN_REQUEST_TOKEN=' && echo HOOK-COMMAND-OK
+      files: libs/never-generated.lock
     secrets:
       GH_BOT_APP_ID: ${{ secrets.GH_BOT_APP_ID }}
       GH_BOT_PRIVATE_KEY: ${{ secrets.GH_BOT_PRIVATE_KEY }}
