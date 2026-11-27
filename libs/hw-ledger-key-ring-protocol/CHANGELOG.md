@@ -1,5 +1,11 @@
 # @ledgerhq/hw-ledger-key-ring-protocol
 
+## 1.2.0
+
+### Minor Changes
+
+- [#192](https://github.com/LedgerHQ/ts-libs/pull/192) [`b51ffc1`](https://github.com/LedgerHQ/ts-libs/commit/b51ffc11f0a5211841d88b5b058e75d4a7ea962d) Thanks [@michalmisiejuk-ext-collab](https://github.com/michalmisiejuk-ext-collab)! - Keep child streams given before their parent in StreamTree.from
+
 ## 1.1.0
 
 ### Minor Changes
