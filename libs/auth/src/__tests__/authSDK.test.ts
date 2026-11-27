@@ -35,6 +35,8 @@ describe("AuthSDK", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     queryFn.mockReset();
+    identityProvider.authenticate.mockReset();
+    keycloakService.getChallenge.mockReset();
     queryFn.mockReturnValue(Promise.resolve());
 
     keycloakService.getChallenge.mockResolvedValue("challenge");
@@ -360,13 +362,212 @@ describe("AuthSDK", () => {
 
     expect(queryFn).not.toHaveBeenCalled();
   });
+
+  describe("renewing a stale token", () => {
+    const staleToken = {
+      accessToken: makeJwt({ exp: now() + 2 }),
+      tokenType: "Bearer",
+    };
+    const freshToken = { accessToken: makeJwt({ exp: now() + 3600 }), tokenType: "Bearer" };
+
+    it("uses the identity provider's refresh when it has one", async () => {
+      const refresh = jest.fn().mockResolvedValue(freshToken);
+      identityProvider.authenticate.mockResolvedValueOnce(staleToken);
+      const sdk = new AuthSDK(config, {
+        provider: { ...identityProvider, refresh },
+        keycloakService,
+      });
+
+      await sdk.withToken({ queryFn });
+      await sdk.withToken({ queryFn });
+
+      expect(refresh).toHaveBeenCalledWith(staleToken);
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(queryFn).toHaveBeenLastCalledWith(freshToken);
+      expect(identityProvider.authenticate).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ["fails", () => Promise.reject(new Error("refresh failed"))],
+      ["returns no access token", () => Promise.resolve({ tokenType: "Bearer", accessToken: "" })],
+    ])(
+      "authenticates again when the identity provider's refresh %s",
+      async (_name, refreshImpl) => {
+        const refresh = jest.fn(refreshImpl);
+        identityProvider.authenticate
+          .mockResolvedValueOnce(staleToken)
+          .mockResolvedValueOnce(freshToken);
+        const sdk = new AuthSDK(config, {
+          provider: { ...identityProvider, refresh },
+          keycloakService,
+        });
+
+        await sdk.withToken({ queryFn });
+        await sdk.withToken({ queryFn });
+
+        expect(refresh).toHaveBeenCalledWith(staleToken);
+        expect(refresh).toHaveBeenCalledTimes(1);
+        expect(queryFn).toHaveBeenLastCalledWith(freshToken);
+        expect(identityProvider.authenticate).toHaveBeenCalledTimes(2);
+      },
+    );
+
+    it("renews the current token when queryFn asks for a retry", async () => {
+      const validToken = { ...staleToken, accessToken: makeJwt({ exp: now() + 3600 }) };
+      const refresh = jest.fn().mockResolvedValue(freshToken);
+      identityProvider.authenticate.mockResolvedValueOnce(validToken);
+      const retryableResult = { status: 401 };
+      queryFn.mockResolvedValueOnce(retryableResult).mockResolvedValueOnce({ status: 200 });
+
+      await new AuthSDK(config, {
+        provider: { ...identityProvider, refresh },
+        keycloakService,
+      }).withToken({ queryFn, refreshAndRetryWhen: result => result === retryableResult });
+
+      expect(refresh).toHaveBeenCalledWith(validToken);
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(queryFn).toHaveBeenLastCalledWith(freshToken);
+      expect(identityProvider.authenticate).toHaveBeenCalledTimes(1);
+    });
+
+    it("authenticates on a retry when the rejected token came from refresh", async () => {
+      const loginToken = { accessToken: makeJwt({ exp: now() + 3600 }), tokenType: "Bearer" };
+      const nextLoginToken = { accessToken: makeJwt({ exp: now() + 3601 }), tokenType: "Bearer" };
+      const refresh = jest.fn().mockResolvedValue(freshToken);
+      identityProvider.authenticate
+        .mockResolvedValueOnce(loginToken)
+        .mockResolvedValueOnce(nextLoginToken);
+      const rejected = { status: 401 };
+      queryFn.mockImplementation(token =>
+        Promise.resolve(token === nextLoginToken ? { status: 200 } : rejected),
+      );
+      const refreshAndRetryWhen = (result: unknown) => result === rejected;
+      const sdk = new AuthSDK(config, {
+        provider: { ...identityProvider, refresh },
+        keycloakService,
+      });
+
+      await expect(sdk.withToken({ queryFn, refreshAndRetryWhen })).resolves.toBe(rejected);
+      await expect(sdk.withToken({ queryFn, refreshAndRetryWhen })).resolves.toEqual({
+        status: 200,
+      });
+
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(refresh).toHaveBeenCalledWith(loginToken);
+      expect(identityProvider.authenticate).toHaveBeenCalledTimes(2);
+      expect(queryFn).toHaveBeenLastCalledWith(nextLoginToken);
+    });
+
+    it("keeps refreshing a token that refresh produced once it expires", async () => {
+      const staleRefreshedToken = { ...staleToken, accessToken: makeJwt({ exp: now() + 1 }) };
+      const refresh = jest
+        .fn()
+        .mockResolvedValueOnce(staleRefreshedToken)
+        .mockResolvedValueOnce(freshToken);
+      identityProvider.authenticate.mockResolvedValueOnce(staleToken);
+      const sdk = new AuthSDK(config, {
+        provider: { ...identityProvider, refresh },
+        keycloakService,
+      });
+
+      await sdk.withToken({ queryFn });
+      await sdk.withToken({ queryFn });
+      await sdk.withToken({ queryFn });
+
+      expect(refresh).toHaveBeenNthCalledWith(2, staleRefreshedToken);
+      expect(queryFn).toHaveBeenLastCalledWith(freshToken);
+      expect(identityProvider.authenticate).toHaveBeenCalledTimes(1);
+    });
+
+    it("authenticates again on a retry when a concurrent renewal fails", async () => {
+      const validToken = { accessToken: makeJwt({ exp: now() + 3600 }), tokenType: "Bearer" };
+      const retryable = { status: 401 };
+      const renewalStarted = createDeferred<void>();
+      const renewal = createDeferred<typeof validToken>();
+      const secondAnswer = createDeferred<typeof retryable>();
+      const refresh = jest.fn().mockImplementationOnce(() => {
+        renewalStarted.resolve();
+        return renewal.promise;
+      });
+      identityProvider.authenticate
+        .mockResolvedValueOnce(validToken)
+        .mockRejectedValueOnce(new Error("renewal failed"))
+        .mockResolvedValueOnce(freshToken);
+      const firstQuery = jest.fn().mockResolvedValue(retryable);
+      const secondQuery = jest
+        .fn()
+        .mockReturnValueOnce(secondAnswer.promise)
+        .mockResolvedValueOnce({ status: 200 });
+      const refreshAndRetryWhen = (result: unknown) => result === retryable;
+      const sdk = new AuthSDK(config, {
+        provider: { ...identityProvider, refresh },
+        keycloakService,
+      });
+
+      const first = sdk.withToken({ queryFn: firstQuery, refreshAndRetryWhen });
+      const second = sdk.withToken({ queryFn: secondQuery, refreshAndRetryWhen });
+      await renewalStarted.promise;
+      secondAnswer.resolve(retryable);
+      await new Promise(resolve => setImmediate(resolve));
+      renewal.reject(new Error("refresh failed"));
+
+      await expect(first).rejects.toThrow("renewal failed");
+      await expect(second).resolves.toEqual({ status: 200 });
+      expect(secondQuery).toHaveBeenLastCalledWith(freshToken);
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(identityProvider.authenticate).toHaveBeenCalledTimes(3);
+    });
+
+    it("authenticates at once on a retry during another authentication, without refresh", async () => {
+      const validToken = { accessToken: makeJwt({ exp: now() + 3600 }), tokenType: "Bearer" };
+      const retryable = { status: 401 };
+      const authenticationStarted = createDeferred<void>();
+      const authentication = createDeferred<typeof validToken>();
+      const secondAnswer = createDeferred<typeof retryable>();
+      identityProvider.authenticate
+        .mockResolvedValueOnce(validToken)
+        .mockImplementationOnce(() => {
+          authenticationStarted.resolve();
+          return authentication.promise;
+        })
+        .mockResolvedValueOnce(freshToken);
+      const firstQuery = jest
+        .fn()
+        .mockResolvedValueOnce(retryable)
+        .mockResolvedValueOnce({ status: 200 });
+      const secondQuery = jest
+        .fn()
+        .mockReturnValueOnce(secondAnswer.promise)
+        .mockResolvedValueOnce({ status: 200 });
+      const refreshAndRetryWhen = (result: unknown) => result === retryable;
+      const sdk = new AuthSDK(config, { provider: identityProvider, keycloakService });
+
+      const first = sdk.withToken({ queryFn: firstQuery, refreshAndRetryWhen });
+      const second = sdk.withToken({ queryFn: secondQuery, refreshAndRetryWhen });
+      await authenticationStarted.promise;
+      secondAnswer.resolve(retryable);
+
+      await expect(second).resolves.toEqual({ status: 200 });
+      expect(secondQuery).toHaveBeenLastCalledWith(freshToken);
+      expect(identityProvider.authenticate).toHaveBeenCalledTimes(3);
+
+      authentication.resolve(validToken);
+      await expect(first).resolves.toEqual({ status: 200 });
+    });
+  });
 });
+
+function now(): number {
+  return Math.floor(Date.now() / 1000);
+}
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(res => {
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((res, rej) => {
     resolve = res;
+    reject = rej;
   });
 
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }

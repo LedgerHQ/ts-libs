@@ -38,6 +38,14 @@ export type TokenState =
 export interface IdentityProvider {
   brokerId: string;
   authenticate(request: IdPAuthParams): Promise<KeycloakToken>;
+  /**
+   * Return a new token when the cached one is no longer valid (expiring or already expired) or
+   * when refreshAndRetryWhen rejected it. When it is missing, throws or returns no access token,
+   * AuthSDK authenticates again and drops the error, so report failures inside refresh. A token
+   * that refresh returned is not refreshed again once refreshAndRetryWhen rejects it: AuthSDK
+   * authenticates instead.
+   */
+  refresh?(token: KeycloakToken): Promise<KeycloakToken>;
 }
 
 export type IdPAuthParams = {
