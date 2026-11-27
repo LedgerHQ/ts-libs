@@ -84,46 +84,11 @@ export type GetStreamsOptions = {
    * With a trailing `/`, only the streams below it.
    */
   pathPrefix: string;
-} & (
-  | {
-      /**
-       * Skip the member permissions check of the login.
-       */
-      ignorePermissionsChecks?: boolean;
-      deviceId?: never;
-      callbacks?: never;
-    }
-  | {
-      /**
-       * Read with this device's login instead of the member credentials, which are then not used.
-       */
-      deviceId: string;
-      /**
-       * Device interaction callbacks.
-       */
-      callbacks?: TrustchainDeviceCallbacks;
-      ignorePermissionsChecks?: never;
-    }
-);
-
-export type AddMemberOptions = {
   /**
-   * The stream to add the member to. Defaults to the latest stream of the SDK's application.
+   * Skip the member permissions check of the login.
    */
-  path?: string;
-} & (
-  | { deviceId?: never; callbacks?: never }
-  | {
-      /**
-       * The device that authenticates and signs instead of the member credentials.
-       */
-      deviceId: string;
-      /**
-       * Device interaction callbacks.
-       */
-      callbacks?: TrustchainDeviceCallbacks;
-    }
-);
+  ignorePermissionsChecks?: boolean;
+};
 
 /**
  * The TrustchainSDKContext is a context that is used to initialize the TrustchainSDK.
@@ -259,19 +224,15 @@ export interface TrustchainSDK {
   ): Promise<Trustchain>;
 
   /**
-   * add a member to the application trustchain, or with options.path to another existing stream:
-   * m/0'/<application>'/<generation>' followed by any number of <object>'/<generation>' pairs.
-   * Does nothing when the member is already in the stream with the same permissions, and refuses
-   * other permissions. Refuses a missing stream (see createStreamWithDevice), a closed stream
-   * (TrustchainEjected without options.path, as restoreTrustchain), a generation replaced by a
-   * newer one, and a stream below an ancestor stream that is missing, closed or not the latest
-   * generation.
+   * add a member to the application trustchain, signed with the member credentials.
+   * Does nothing when the member is already there with the same permissions, and refuses other
+   * permissions. Throws TrustchainEjected when the application stream is closed, as
+   * restoreTrustchain.
    */
   addMember(
     trustchain: Trustchain,
     memberCredentials: MemberCredentials,
     member: TrustchainMember,
-    options?: AddMemberOptions,
   ): Promise<void>;
 
   /**
@@ -314,10 +275,50 @@ export interface TrustchainSDK {
   ): Promise<TrustchainStream[]>;
 
   /**
-   * Create the stream at `path` (laid out as in addMember) with the device, with `member` in it.
-   * Only the device can derive the key of a new stream. Refuses a stream that already exists
-   * (add members to it with addMember), a generation replaced by a newer one, and the ancestor
-   * streams addMember refuses.
+   * The stream at `trustchain.applicationPath` (m/0'/<application>'/<generation>'), or undefined
+   * when the backend does not list it: missing, or replaced by a newer generation. The member login
+   * only names listed streams, so undefined needs `ignorePermissionsChecks`; without it such a
+   * stream throws TrustchainOutdated.
+   */
+  getApplicationStream(
+    trustchain: Trustchain,
+    memberCredentials: MemberCredentials,
+    options?: { ignorePermissionsChecks?: boolean },
+  ): Promise<TrustchainStream | undefined>;
+
+  /**
+   * Add a member with the device to the latest stream of the application of
+   * `trustchain.applicationPath`, which may be another application than the SDK's own, and
+   * resolve to the path of that stream. Refuses what addMemberToStreamWithDevice refuses.
+   */
+  addMemberToApplicationWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    member: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<string>;
+
+  /**
+   * Add a member with the device to the existing stream at `path`:
+   * m/0'/<application>'/<generation>' followed by any number of <object>'/<generation>' pairs.
+   * Does nothing when the member is already in the stream with the same permissions, and refuses
+   * other permissions. Refuses a missing stream (see createStreamWithDevice), a closed stream, a
+   * generation replaced by a newer one, and a stream below an ancestor stream that is missing,
+   * closed or not the latest generation.
+   */
+  addMemberToStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    path: string,
+    member: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<void>;
+
+  /**
+   * Create the stream at `path` (laid out as in addMemberToStreamWithDevice) with the device, with
+   * `member` in it. Only the device can derive the key of a new stream. Refuses a stream that
+   * already exists (add members to it with addMemberToStreamWithDevice), a generation replaced by
+   * a newer one, and the ancestor streams addMemberToStreamWithDevice refuses.
    */
   createStreamWithDevice(
     deviceId: string,
@@ -328,8 +329,36 @@ export interface TrustchainSDK {
   ): Promise<void>;
 
   /**
-   * Close the stream at `path` (laid out as in addMember) with the device. Resolves to false
-   * when it is missing (including a generation replaced by a newer one) or already closed.
+   * Create with the device the next generation of the application stream at
+   * `trustchain.applicationPath`, with only `retainedMember` in it, and return the trustchain on
+   * it. `retainedMember` is the member of `memberCredentials` and must be in the current
+   * generation with the same permissions. When a previous call already created the next
+   * generation with only that member, returns it without a device signature. Does not close the
+   * current generation, and it can no longer be closed afterwards: the backend stops listing it, so
+   * closeApplicationStreamWithDevice resolves to false.
+   */
+  prepareApplicationStreamRotationWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    memberCredentials: MemberCredentials,
+    retainedMember: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<Trustchain>;
+
+  /**
+   * Close the application stream at `trustchain.applicationPath` with the device. Resolves to
+   * false when it is missing (including a generation replaced by a newer one) or already closed.
+   */
+  closeApplicationStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<boolean>;
+
+  /**
+   * Close the stream at `path` (laid out as in addMemberToStreamWithDevice) with the device.
+   * Resolves to false when it is missing (including a generation replaced by a newer one) or
+   * already closed.
    */
   closeStreamWithDevice(
     deviceId: string,

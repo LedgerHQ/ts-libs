@@ -240,16 +240,16 @@ describe("MockSDK", () => {
   });
 
   it.each([
-    ["a path", { path: "m/0'/16'/0'/1'/0'" }],
-    ["a device", { deviceId: "device" }],
-  ])("rejects addMember with %s, which it does not mock", async (_name, options) => {
-    const { trustchain } = await sdk.getOrCreateTrustchain("", credentials);
-    const member = { id: credentials.pubkey, name: "other", permissions: Permissions.OWNER };
-
-    await expect(sdk.addMember(trustchain, credentials, member, options)).rejects.toThrow(
-      "addMember with a path or a device is not mocked",
-    );
-    expect(await sdk.getMembers(trustchain, credentials)).toHaveLength(1);
+    "getStreams",
+    "getApplicationStream",
+    "addMemberToApplicationWithDevice",
+    "addMemberToStreamWithDevice",
+    "createStreamWithDevice",
+    "prepareApplicationStreamRotationWithDevice",
+    "closeApplicationStreamWithDevice",
+    "closeStreamWithDevice",
+  ] as const)("rejects %s, which it does not mock", async method => {
+    await expect(sdk[method]()).rejects.toThrow(`${method} is not mocked`);
   });
 
   it("addMember creates the application when it does not exist yet", async () => {

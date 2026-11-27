@@ -1,5 +1,4 @@
 import {
-  AddMemberOptions,
   GetOrCreateTrustchainCallbacks,
   JWT,
   MemberCredentials,
@@ -290,11 +289,7 @@ export class MockSDK implements TrustchainSDK {
     trustchain: Trustchain,
     memberCredentials: MemberCredentials,
     member: TrustchainMember,
-    options?: AddMemberOptions,
   ): Promise<void> {
-    if (options?.path !== undefined || options?.deviceId !== undefined) {
-      throw new Error("addMember with a path or a device is not mocked");
-    }
     assertPermissions(member.permissions);
     assertTrustchain(trustchain);
     assertLiveCredentials(memberCredentials);
@@ -337,8 +332,28 @@ export class MockSDK implements TrustchainSDK {
     return Promise.reject(new Error("getStreams is not mocked"));
   }
 
+  getApplicationStream(): Promise<TrustchainStream | undefined> {
+    return Promise.reject(new Error("getApplicationStream is not mocked"));
+  }
+
+  addMemberToApplicationWithDevice(): Promise<string> {
+    return Promise.reject(new Error("addMemberToApplicationWithDevice is not mocked"));
+  }
+
+  addMemberToStreamWithDevice(): Promise<void> {
+    return Promise.reject(new Error("addMemberToStreamWithDevice is not mocked"));
+  }
+
   createStreamWithDevice(): Promise<void> {
     return Promise.reject(new Error("createStreamWithDevice is not mocked"));
+  }
+
+  prepareApplicationStreamRotationWithDevice(): Promise<Trustchain> {
+    return Promise.reject(new Error("prepareApplicationStreamRotationWithDevice is not mocked"));
+  }
+
+  closeApplicationStreamWithDevice(): Promise<boolean> {
+    return Promise.reject(new Error("closeApplicationStreamWithDevice is not mocked"));
   }
 
   closeStreamWithDevice(): Promise<boolean> {
