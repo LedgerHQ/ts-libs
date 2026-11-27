@@ -22,6 +22,34 @@ async function appTree() {
 }
 
 describe("StreamTree structure", () => {
+  it("adds a member to the root stream in place", async () => {
+    const alice = device.software();
+    const bobKey = (await device.software().getPublicKey()).publicKey;
+    const tree = await (await StreamTree.createNewTree(alice)).share("m/", alice, bobKey, "Bob", 0);
+
+    expect(Object.keys(tree.serialize())).toEqual(["m/"]);
+    const members = (await tree.getRoot().resolve()).getMembersData();
+    expect(members.map(m => m.name)).toEqual(["Bob"]);
+  });
+
+  it("refuses a derived stream with an empty path as the root", async () => {
+    const alice = device.software();
+    const tree = await StreamTree.createNewTree(alice);
+    const root = tree.getRoot();
+    const derivedAtRoot = await new CommandStream()
+      .edit()
+      .derive([])
+      .addMember("Eve", crypto.randomKeypair().publicKey, Permissions.OWNER, true)
+      .issue(alice, tree, await root.getRootHash());
+
+    expect(() => StreamTree.from(root, derivedAtRoot)).toThrow(
+      "A derived stream cannot be the root of the tree (m/)",
+    );
+    expect(() => tree.update(derivedAtRoot)).toThrow(
+      "A derived stream cannot be the root of the tree (m/)",
+    );
+  });
+
   it("rejects a tree whose root is null", () => {
     expect(() => StreamTree.deserialize({})).toThrow(
       "StreamTree.from requires the root of the tree",
@@ -90,6 +118,7 @@ describe("StreamTree.getPublishKeyEvent", () => {
     const indexes = [0x80000000, 0x80000010, 0x80000000];
     const event = await tree.getPublishKeyEvent(bobKey, indexes);
     expect(event?.stream).toBe(stream);
+    expect(event?.streamPath).toEqual(indexes);
     expect(event?.groupPublicKey).toHaveLength(33);
     expect(event?.encryptedXpriv.length).toBeGreaterThan(0);
   });
@@ -99,8 +128,10 @@ describe("StreamTree.getPublishKeyEvent", () => {
     const key = (await alice.getPublicKey()).publicKey;
     const event = await tree.getPublishKeyEvent(key, [0x80000000, 0x80000010, 0x80000000, 5]);
     expect(event?.stream.getStreamPath()).toBe("m/0'/16'/0'");
+    expect(event?.streamPath).toEqual([0x80000000, 0x80000010, 0x80000000]);
     const missingBranch = await tree.getPublishKeyEvent(key, [0x80000000, 0x80000063, 0x80000000]);
     expect(missingBranch?.stream).toBe(tree.getRoot());
+    expect(missingBranch?.streamPath).toEqual([]);
   });
 
   it("returns null for a member that has no key anywhere on the path", async () => {

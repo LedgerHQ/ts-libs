@@ -1,6 +1,7 @@
 import { DerivationPath, Permissions, StreamTree } from "../..";
 import { AddMember, createCommandBlock, PublishKey, Derive, Seed } from "../../CommandBlock";
 import CommandStream from "../../CommandStream";
+import CommandStreamResolver from "../../CommandStreamResolver";
 import { crypto } from "../../Crypto";
 import { createDevice, ISSUER_PLACEHOLDER, SoftwareDevice } from "../../Device";
 
@@ -9,6 +10,19 @@ const PATH = DerivationPath.toIndexArray(PATH_STRING);
 
 function emptySeed() {
   return new Seed(null, 0, new Uint8Array(), new Uint8Array(), new Uint8Array(), new Uint8Array());
+}
+
+function xprivParts(xpriv: Uint8Array) {
+  return {
+    privateKey: crypto.to_hex(xpriv.slice(0, 32)),
+    chainCode: crypto.to_hex(xpriv.slice(32)),
+  };
+}
+
+// the device holds the root and derives every stream from it along the full path
+function rootDerivation(root: Uint8Array, path: number[]) {
+  const { privateKey, chainCode } = crypto.derivePrivate(root, path);
+  return xprivParts(new Uint8Array([...privateKey, ...chainCode]));
 }
 
 describe("SoftwareDevice", () => {
@@ -148,5 +162,63 @@ describe("SoftwareDevice", () => {
     );
     const signed = await alice.sign([parent, block]);
     expect(signed.signature.length).toBeGreaterThan(0);
+  });
+
+  describe("below the stream that holds the member's key", () => {
+    const SUB_PATH_STRING = `${PATH_STRING}/5'/0'`;
+    const SUB_PATH = DerivationPath.toIndexArray(SUB_PATH_STRING);
+
+    it("derives a stream below its own stream from the root along the full path", async () => {
+      const alice = createDevice();
+      const bob = createDevice();
+      const carol = createDevice();
+      const bobKey = (await bob.getPublicKey()).publicKey;
+      const carolKey = (await carol.getPublicKey()).publicKey;
+      let tree = await StreamTree.createNewTree(alice);
+      tree = await tree.share(PATH_STRING, alice, bobKey, "Bob", Permissions.OWNER);
+      tree = await tree.share(SUB_PATH_STRING, bob, carolKey, "Carol", Permissions.OWNER);
+
+      const root = await alice.readKey(tree, []);
+      expect(xprivParts(await carol.readKey(tree, SUB_PATH))).toEqual(
+        rootDerivation(root, SUB_PATH),
+      );
+    });
+
+    it("derives, as the root owner, a stream below a stream it derived", async () => {
+      const alice = createDevice();
+      const carol = createDevice();
+      const carolKey = (await carol.getPublicKey()).publicKey;
+      let tree = await StreamTree.createNewTree(alice);
+      tree = await tree.share(PATH_STRING, alice, crypto.randomKeypair().publicKey, "Bob", 0);
+      tree = await tree.share(SUB_PATH_STRING, alice, carolKey, "Carol", Permissions.OWNER);
+
+      const root = await alice.readKey(tree, []);
+      expect(xprivParts(await carol.readKey(tree, SUB_PATH))).toEqual(
+        rootDerivation(root, SUB_PATH),
+      );
+      const sub = tree.getChild(SUB_PATH_STRING)!;
+      await expect(
+        CommandStreamResolver.resolve([tree.getRoot().blocks[0], ...sub.blocks]),
+      ).resolves.toBeDefined();
+    });
+
+    it("reads a stream below its own stream before it exists", async () => {
+      const alice = createDevice();
+      const bob = createDevice();
+      const bobKey = (await bob.getPublicKey()).publicKey;
+      let tree = await StreamTree.createNewTree(alice);
+      tree = await tree.share(PATH_STRING, alice, bobKey, "Bob", Permissions.OWNER);
+
+      const root = await alice.readKey(tree, []);
+      expect(xprivParts(await bob.readKey(tree, SUB_PATH))).toEqual(rootDerivation(root, SUB_PATH));
+    });
+
+    it("reads a stream below the root before it exists", async () => {
+      const alice = createDevice();
+      const tree = await StreamTree.createNewTree(alice);
+
+      const root = await alice.readKey(tree, []);
+      expect(xprivParts(await alice.readKey(tree, PATH))).toEqual(rootDerivation(root, PATH));
+    });
   });
 });

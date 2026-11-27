@@ -70,6 +70,35 @@ describe("DerivationPath", () => {
     expect(DerivationPath.toIndexArray("1/2")).toEqual([1, 2]);
   });
 
+  it("parses the root path as no index", () => {
+    expect(DerivationPath.toIndexArray("")).toEqual([]);
+    expect(DerivationPath.toIndexArray("m")).toEqual([]);
+    expect(DerivationPath.toIndexArray("m/")).toEqual([]);
+  });
+
+  it("parses the largest index, hardened or not", () => {
+    expect(DerivationPath.toIndexArray("m/2147483647'/2147483647")).toEqual([
+      0xffffffff, 0x7fffffff,
+    ]);
+  });
+
+  it.each([
+    ["a trailing slash", "m/0'/16'/", ""],
+    ["an empty component", "m//0'", ""],
+    ["a leading slash", "/0'", ""],
+    ["an uppercase M", "M/0'", "M"],
+    ["letters", "m/abc", "abc"],
+    ["a number followed by letters", "m/12abc", "12abc"],
+    ["a negative index", "m/-1", "-1"],
+    ["an uppercase H", "m/0H", "0H"],
+    ["a hardened index above 2^31 - 1", "m/2147483648'", "2147483648'"],
+    ["an index above 2^31 - 1", "m/2147483648", "2147483648"],
+  ])("refuses %s", (_name, path, component) => {
+    expect(() => DerivationPath.toIndexArray(path)).toThrow(
+      `Invalid derivation path component "${component}" in "${path}"`,
+    );
+  });
+
   it("returns array paths unchanged", () => {
     const path = [1, 2];
     expect(DerivationPath.toIndexArray(path)).toBe(path);

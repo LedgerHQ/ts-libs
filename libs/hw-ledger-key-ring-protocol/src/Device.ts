@@ -8,7 +8,7 @@ import {
   Seed,
 } from "./CommandBlock";
 import CommandStreamResolver from "./CommandStreamResolver";
-import { crypto, DerivationPath, KeyPair } from "./Crypto";
+import { crypto, KeyPair } from "./Crypto";
 import { StreamTree } from "./StreamTree";
 
 /**
@@ -33,7 +33,7 @@ export interface Device {
    * Read the symmetric key from the stream tree at the given path. This function may not be implemented by all devices.
    * @param tree The stream tree
    * @param path The path to the key
-   * @returns The public key of the symmetric key
+   * @returns The stream's extended private key (32-byte private key, then 32-byte chain code)
    */
   readKey(tree: StreamTree, path: number[]): Promise<Uint8Array>;
 }
@@ -102,7 +102,7 @@ export class SoftwareDevice implements Device {
       initializationVector: event.nonce,
     };
     const sharedKey = this.decryptSharedKey(encryptedSharedKey);
-    const newKey = crypto.derivePrivate(sharedKey.xpriv, path);
+    const newKey = crypto.derivePrivate(sharedKey.xpriv, path.slice(event.streamPath.length));
     const xpriv = new Uint8Array(64);
     xpriv.set(newKey.privateKey);
     xpriv.set(newKey.chainCode, 32);
@@ -201,31 +201,7 @@ export class SoftwareDevice implements Device {
   }
 
   async readKey(tree: StreamTree, path: number[]): Promise<Uint8Array> {
-    const event = await tree.getPublishKeyEvent(this.keyPair.publicKey, path);
-    if (!event) {
-      throw new Error("Cannot find key in the tree for the current device");
-    }
-    const encryptedSharedKey: EncryptedSharedKey = {
-      encryptedXpriv: event.encryptedXpriv,
-      initializationVector: event.nonce,
-      publicKey: event.groupPublicKey,
-      ephemeralPublicKey: event.ephemeralPublicKey,
-    };
-    const sharedKey = this.decryptSharedKey(encryptedSharedKey);
-
-    // Derive the key to match the path
-    let index = DerivationPath.toIndexArray(event.stream.getStreamPath()!).length;
-    while (index < path.length) {
-      const derivation = crypto.derivePrivate(sharedKey.xpriv, [index]);
-      const xpriv = new Uint8Array(64);
-      xpriv.set(derivation.privateKey);
-      xpriv.set(derivation.chainCode, 32);
-      sharedKey.xpriv = xpriv;
-      sharedKey.publicKey = derivation.publicKey;
-      index += 1;
-    }
-
-    return sharedKey.xpriv;
+    return (await this.deriveKey(tree, path)).xpriv;
   }
 
   isPublicKeyAvailable(): boolean {

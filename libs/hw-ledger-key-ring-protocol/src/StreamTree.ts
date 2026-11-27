@@ -14,6 +14,8 @@ export interface StreamTreeCreateOpts {
  */
 export interface PublishKeyEvent {
   stream: CommandStream;
+  /** Where `stream` is in the tree: the requested path or the closest ancestor holding the key */
+  streamPath: number[];
   encryptedXpriv: Uint8Array;
   groupPublicKey: Uint8Array;
   ephemeralPublicKey: Uint8Array;
@@ -68,6 +70,7 @@ export class StreamTree {
     }
     return {
       stream: leaf.getValue()!,
+      streamPath: path.slice(),
       encryptedXpriv: key.encryptedXpriv,
       ephemeralPublicKey: key.ephemeralPublicKey,
       nonce: key.initialiationVector,
@@ -182,8 +185,7 @@ export class StreamTree {
     const path = stream.getStreamPath();
 
     if (path === null) throw new Error("Stream path cannot be null");
-    const indexes = DerivationPath.toIndexArray(path);
-    const newTree = this.tree.updateChild(indexes, stream);
+    const newTree = this.tree.updateChild(streamIndexes(path), stream);
 
     return new StreamTree(newTree);
   }
@@ -243,10 +245,18 @@ export class StreamTree {
     let tree = new IndexedTree(root);
     streamMap.delete("");
     streamMap.forEach((stream, path) => {
-      const p = DerivationPath.toIndexArray(path);
       // updateChild keeps the children already added, so a parent may come after its child
-      tree = tree.updateChild(p, stream);
+      tree = tree.updateChild(streamIndexes(path), stream);
     });
     return new StreamTree(tree);
   }
+}
+
+// only the seed stream (path "") is the root: a derived stream with an empty path would replace it
+function streamIndexes(path: string): number[] {
+  const indexes = DerivationPath.toIndexArray(path);
+  if (indexes.length === 0 && path !== "") {
+    throw new Error(`A derived stream cannot be the root of the tree (${path})`);
+  }
+  return indexes;
 }

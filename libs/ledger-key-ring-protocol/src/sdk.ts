@@ -159,10 +159,9 @@ export class SDK implements TrustchainSDK {
 
     // we find our trustchain root id
     let trustchainRootId: string | undefined;
-    const trustchainRootPath = "m/";
     for (const [trustchainId, info] of Object.entries(trustchains)) {
       for (const path in info) {
-        if (path === trustchainRootPath) {
+        if (path === ROOT_PATH) {
           trustchainRootId = trustchainId;
         }
       }
@@ -377,11 +376,11 @@ export class SDK implements TrustchainSDK {
     const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
     return Promise.all(
       Object.keys(streamTree.serialize())
-        .filter(path => isAtOrBelow(path, options.pathPrefix))
-        .flatMap(path => {
-          // the root ("m/") has no child path
+        .filter(path => path !== ROOT_PATH && isAtOrBelow(path, options.pathPrefix))
+        .map(path => {
           const stream = streamTree.getChild(path);
-          return stream ? [describeStream(path, stream)] : [];
+          invariant(stream, `stream ${path} could not be read`);
+          return describeStream(path, stream);
         }),
     );
   }
@@ -666,6 +665,7 @@ function invariant(condition: unknown, message: string): asserts condition {
 }
 
 const MAX_HARDENED_INDEX = 0x7fffffff;
+const ROOT_PATH = "m/";
 
 // streams are generations of a container (the application, then objects below it), and the
 // backend only returns streams laid out this way
