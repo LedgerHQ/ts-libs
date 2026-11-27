@@ -40,9 +40,11 @@ const createRelay = async () => {
   const sockets: WebSocket[] = [];
   server.on("connection", ws => {
     sockets.push(ws);
-    ws.on("message", message => {
+    ws.on("message", (message, isBinary) => {
       for (const peer of sockets) {
-        if (peer !== ws && peer.readyState === WebSocket.OPEN) peer.send(message);
+        if (peer !== ws && peer.readyState === WebSocket.OPEN) {
+          peer.send(message, { binary: isBinary });
+        }
       }
     });
   });
@@ -70,7 +72,7 @@ const createPeer = async (url: string, sessionPublicKey: Uint8Array) => {
       ws.on("message", raw => listener(JSON.parse(raw.toString()))),
     send: (message: Record<string, unknown>) =>
       ws.send(JSON.stringify({ version: 1, publisher, ...message })),
-    sendRaw: (frame: string) => ws.send(frame),
+    sendRaw: (frame: string | Buffer) => ws.send(frame),
     close: () => ws.close(),
   };
 };
@@ -482,6 +484,33 @@ describe("Trustchain QR Code", () => {
 
       await expect(hostP).rejects.toThrow(QRCodeProtocolError);
       expect(addMember).not.toHaveBeenCalled();
+      peer.close();
+    });
+
+    test("the host rejects a binary frame even when it carries a valid message", async () => {
+      relay = await createRelay();
+      const { memberCredentials, addMember, memberName } = await createTestSetup();
+
+      const { promise: hostP, url } = await startHost({
+        initialTrustchainId: MOCK_TRUSTCHAIN.rootId,
+        addMember,
+        memberCredentials,
+        memberName,
+      });
+
+      const peer = await createPeer(url, hostPublicKeyOf(url));
+      peer.sendRaw(
+        Buffer.from(
+          JSON.stringify({
+            version: 1,
+            publisher: peer.publisher,
+            message: "InitiateHandshake",
+            payload: { ephemeral_public_key: peer.publisher },
+          }),
+        ),
+      );
+
+      await expect(hostP).rejects.toThrow("invalid json");
       peer.close();
     });
 

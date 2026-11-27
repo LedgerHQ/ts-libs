@@ -18,15 +18,18 @@ const createRelay = async () => {
   const sockets: WebSocket[] = [];
   server.on("connection", ws => {
     sockets.push(ws);
-    ws.on("message", message => {
+    ws.on("message", (message, isBinary) => {
       for (const peer of sockets) {
-        if (peer !== ws && peer.readyState === WebSocket.OPEN) peer.send(message);
+        if (peer !== ws && peer.readyState === WebSocket.OPEN) {
+          peer.send(message, { binary: isBinary });
+        }
       }
     });
   });
   const { port } = server.address() as AddressInfo;
   return {
     baseUrl: `ws://localhost:${port}`,
+    closeSockets: () => sockets.forEach(ws => ws.close()),
     terminateSockets: () => sockets.forEach(ws => ws.terminate()),
     close: () =>
       new Promise<void>(resolve => {
@@ -132,7 +135,7 @@ describe("Trustchain QR Code (extra)", () => {
     });
   });
 
-  it("rejects the host with QRCodeWSClosed when the socket closes before the end", async () => {
+  const startConnectedHost = async () => {
     let resolveUrl: (url: string) => void;
     const urlPromise = new Promise<string>(resolve => {
       resolveUrl = resolve;
@@ -148,15 +151,28 @@ describe("Trustchain QR Code (extra)", () => {
     hostP.catch(() => {});
     await urlPromise;
     await new Promise(resolve => setTimeout(resolve, 100));
+    return { hostP };
+  };
 
-    relay.terminateSockets();
+  it("rejects the host with QRCodeWSClosed when the relay closes the socket before the end", async () => {
+    const { hostP } = await startConnectedHost();
+
+    relay.closeSockets();
 
     const error = await hostP.catch(e => e);
     expect(error).toBeInstanceOf(QRCodeWSClosed);
     expect(typeof error.time).toBe("number");
   });
 
-  it("rejects the candidate when the socket closes before the end", async () => {
+  it("rejects the host with the socket error when the connection drops", async () => {
+    const { hostP } = await startConnectedHost();
+
+    relay.terminateSockets();
+
+    await expect(hostP).rejects.toMatchObject({ type: "error" });
+  });
+
+  it("rejects the candidate when the relay closes the socket before the end", async () => {
     const hostPublisher = crypto.to_hex(crypto.randomKeypair().publicKey);
     const candidateP = createQRCodeCandidateInstance({
       memberCredentials: credentials(),
@@ -168,7 +184,7 @@ describe("Trustchain QR Code (extra)", () => {
     candidateP.catch(() => {});
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    relay.terminateSockets();
+    relay.closeSockets();
 
     await expect(candidateP).rejects.toThrow("qrcode websocket prematurely closed");
   });
