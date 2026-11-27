@@ -2,6 +2,8 @@ import { log } from "@ledgerhq/logs";
 import { AuthCachePolicy, JWT } from "./types";
 import { TrustchainNotAllowed, TrustchainOutdated } from "./errors";
 
+class JwtRefused extends TrustchainNotAllowed {}
+
 export async function genericWithJWT<T>(
   job: (jwt: JWT) => Promise<T>,
   initialJWT: JWT | undefined,
@@ -12,16 +14,18 @@ export async function genericWithJWT<T>(
   function refresh(jwt: JWT) {
     return refreshAuth(jwt).catch(e => {
       log("trustchain", "JWT refresh failed, reauthenticating", e);
-      const { hasExpired, isNotPermitted, isTrustchainOutdated } = networkCheckJwtExpiration(e);
-      if (isNotPermitted) {
-        throw new TrustchainNotAllowed();
-      }
-      if (isTrustchainOutdated) {
-        throw new TrustchainOutdated();
-      }
+      const { hasExpired } = throwIfJwtRejected(e);
       if (hasExpired) {
         return auth();
       }
+      throw e;
+    });
+  }
+
+  // the recovered jwt is not recovered again, but its errors map as on the first attempt
+  function retry(recovered: JWT) {
+    return job(recovered).catch(e => {
+      throwIfJwtRejected(e);
       throw e;
     });
   }
@@ -36,33 +40,28 @@ export async function genericWithJWT<T>(
 
   return job(jwt).catch(async e => {
     // JWT expiration handling: if the function fails, we will recover a valid jwt accordingly to spec. https://ledgerhq.atlassian.net/wiki/spaces/BE/pages/4207083687/TCH+Usage+documentation#JWT-expiration-handling
-    const {
-      hasExpired,
-      canBeRefreshed,
-      isNotPermitted,
-      isTrustchainOutdated,
-      isUncaughtClientError,
-    } = networkCheckJwtExpiration(e);
-
-    if (isNotPermitted) {
-      throw new TrustchainNotAllowed();
-    }
-    if (isTrustchainOutdated) {
-      throw new TrustchainOutdated();
-    }
+    const { hasExpired, canBeRefreshed, isUncaughtClientError } = throwIfJwtRejected(e);
     if (hasExpired) {
       log("trustchain", "JWT expired -> " + (canBeRefreshed ? "refreshing" : "reauthenticating"));
       jwt = await (jwt && canBeRefreshed ? refresh(jwt) : auth());
-      return job(jwt);
+      return retry(jwt);
     }
     if (isUncaughtClientError) {
       log("trustchain", "Uncaught client error -> reauthenticating");
       jwt = await auth();
-      return job(jwt);
+      return retry(jwt);
     }
 
     throw e;
   });
+}
+
+/**
+ * True when the backend refused the JWT itself ("JWT contains no permission"), as opposed to a
+ * TrustchainNotAllowed raised by the device.
+ */
+export function isJwtRefusal(error: unknown): boolean {
+  return error instanceof JwtRefused;
 }
 
 type JwtExpirationCheck = {
@@ -72,6 +71,14 @@ type JwtExpirationCheck = {
   isTrustchainOutdated: boolean;
   isUncaughtClientError: boolean;
 };
+
+// every attempt maps the backend's refusals the same way, so none of them leaks a raw error
+function throwIfJwtRejected(error: unknown): JwtExpirationCheck {
+  const check = networkCheckJwtExpiration(error);
+  if (check.isNotPermitted) throw new JwtRefused();
+  if (check.isTrustchainOutdated) throw new TrustchainOutdated();
+  return check;
+}
 
 /**
  * Contract for HTTP errors reaching this layer, which any transport used to call the trustchain

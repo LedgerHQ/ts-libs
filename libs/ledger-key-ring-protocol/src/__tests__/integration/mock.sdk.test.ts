@@ -16,6 +16,7 @@ const nonMockableScenarios = [
   "agentStreamsWithDevice", // the mock SDK does not implement the stream methods
   "applicationStreamRotationWithDevice", // the mock SDK does not implement the stream methods
   "latestApplicationStreamWithDevice", // the mock SDK does not implement the stream methods
+  "deviceJwtSharing", // logs the device in through a real HWDeviceProvider
 ];
 
 const scenarioFolder = path.join(__dirname, "../../../tests/scenarios");
