@@ -11,10 +11,10 @@ import {
 import { CommandType } from "@ledgerhq/hw-ledger-key-ring-protocol/CommandBlock";
 import { TRUSTCHAIN_API_STAGING } from "../../../tests/test-helpers/config";
 import { PutCommandsRequest } from "../../api";
-import { TrustchainEjected } from "../../errors";
+import { TrustchainEjected, TrustchainOutdated } from "../../errors";
 import { HWDeviceProvider } from "../../HWDeviceProvider";
 import { SDK } from "../../sdk";
-import { AddMemberOptions, GetStreamsOptions, Trustchain, TrustchainMember } from "../../types";
+import { Trustchain, TrustchainMember } from "../../types";
 import { CHALLENGE } from "../../__mocks__/challenge";
 
 const APP = "m/0'/18'/0'";
@@ -144,20 +144,13 @@ describe("getStreams", () => {
     ]);
   });
 
-  it("reads with the device login when given a device", async () => {
+  it("lists only the streams below the prefix when it ends with /", async () => {
     serve(await buildTree(share(APP, alice), share(SUBTREE, agentA)));
-    const callbacks = { onStartRequestUserInteraction: jest.fn() };
 
     await expect(
-      createSdk().getStreams(trustchain, ALICE, {
-        pathPrefix: `${APP}/`,
-        deviceId: "device",
-        callbacks,
-      }),
+      createSdk().getStreams(trustchain, ALICE, { pathPrefix: `${APP}/` }),
     ).resolves.toEqual([{ path: SUBTREE, members: [agentA], closed: false }]);
-    expect(hw.withJwt).toHaveBeenCalledWith("device", expect.any(Function), "cache", callbacks);
-    expect(hw.withJwt).toHaveBeenCalledTimes(1);
-    expect(api.authenticate).not.toHaveBeenCalled();
+    expect(hw.withJwt).not.toHaveBeenCalled();
   });
 
   it("compares the prefix by whole path components", async () => {
@@ -170,16 +163,6 @@ describe("getStreams", () => {
     await expect(
       createSdk().getStreams(trustchain, ALICE, { pathPrefix: "m/0'/16'" }),
     ).resolves.toEqual([{ path: ledgerSync, members: [alice], closed: false }]);
-  });
-
-  it("does not type the options it would ignore", () => {
-    const options: GetStreamsOptions[] = [
-      // @ts-expect-error the device login has no permission check to skip
-      { pathPrefix: APP, deviceId: "device", ignorePermissionsChecks: true },
-      // @ts-expect-error callbacks are for the device
-      { pathPrefix: APP, callbacks: {} },
-    ];
-    expect(options).toHaveLength(2);
   });
 
   it("returns an empty list when no stream matches", async () => {
@@ -203,8 +186,69 @@ describe("getStreams", () => {
   });
 });
 
+describe("getApplicationStream", () => {
+  it("returns the stream at the application path of the trustchain", async () => {
+    serve(await buildTree(share(APP, alice), share(APP, agentA), share(SUBTREE, agentB)));
+
+    await expect(createSdk().getApplicationStream(trustchain, ALICE)).resolves.toEqual({
+      path: APP,
+      members: [alice, agentA],
+      closed: false,
+    });
+    expect(hw.withJwt).not.toHaveBeenCalled();
+  });
+
+  it("reports a closed application stream", async () => {
+    serve(await buildTree(share(APP, alice), close(APP)));
+
+    await expect(createSdk().getApplicationStream(trustchain, ALICE)).resolves.toEqual({
+      path: APP,
+      members: [alice],
+      closed: true,
+    });
+  });
+
+  it("returns undefined for a replaced stream only without the permission check", async () => {
+    // the backend lists and logs in only the latest generation
+    serve(await buildTree(share(NEXT_APP, alice)));
+    api.authenticate.mockReturnValue({
+      access_token: "SOFTWARE JWT",
+      permissions: { ROOTID: { [NEXT_APP]: "ffffffff" } },
+    });
+
+    await expect(createSdk().getApplicationStream(trustchain, ALICE)).rejects.toBeInstanceOf(
+      TrustchainOutdated,
+    );
+    await expect(
+      createSdk().getApplicationStream(trustchain, ALICE, { ignorePermissionsChecks: true }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("skips the permission check only when asked to", async () => {
+    serve(await buildTree(share(APP, alice)));
+    api.authenticate.mockReturnValue({ access_token: "SOFTWARE JWT", permissions: {} });
+
+    await expect(createSdk().getApplicationStream(trustchain, ALICE)).rejects.toThrow(
+      "permissions not available for current trustchain",
+    );
+    await expect(
+      createSdk().getApplicationStream(trustchain, ALICE, { ignorePermissionsChecks: true }),
+    ).resolves.toEqual({ path: APP, members: [alice], closed: false });
+  });
+
+  it.each([SUBTREE, "m/0'/18'"])(
+    "rejects the application path %s before any request",
+    async applicationPath => {
+      await expect(
+        createSdk().getApplicationStream({ ...trustchain, applicationPath }, ALICE),
+      ).rejects.toThrow(`path ${applicationPath} must be m/0'/<application>'/<generation>'`);
+      expect(api.authenticate).not.toHaveBeenCalled();
+    },
+  );
+});
+
 describe("addMember", () => {
-  it("signs with the member credentials when no device is given", async () => {
+  it("signs with the member credentials", async () => {
     serve(await buildTree(share(APP, alice)));
 
     await createSdk().addMember(trustchain, ALICE, agentA);
@@ -217,10 +261,66 @@ describe("addMember", () => {
     expect(hw.withHw).not.toHaveBeenCalled();
   });
 
-  it("with a device, adds the member to the latest stream of the application", async () => {
+  it.each([
+    ["the same id", agentA.id],
+    ["its id in upper case", agentA.id.toUpperCase()],
+  ])("does nothing when the member is already there with %s", async (_name, id) => {
+    serve(await buildTree(share(APP, alice), share(APP, agentA)));
+
+    await createSdk().addMember(trustchain, ALICE, { ...agentA, id });
+
+    expect(api.putCommands).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when the member is already there with the same permissions as a signed mask", async () => {
+    // OWNER & ~KEY_REVOKER is -5 in JS, the stream stores 0xfffffffb
+    const signed = { ...agentA, permissions: Permissions.OWNER & ~Permissions.KEY_REVOKER };
+    serve(await buildTree(share(APP, alice), share(APP, signed)));
+
+    await createSdk().addMember(trustchain, ALICE, signed);
+
+    expect(api.putCommands).not.toHaveBeenCalled();
+  });
+
+  it.each([2 ** 32 + 1, 1.5, -(2 ** 31) - 1])(
+    "refuses permissions %s that do not fit in 32 bits before any request",
+    async permissions => {
+      await expect(
+        createSdk().addMember(trustchain, ALICE, { ...agentA, permissions }),
+      ).rejects.toThrow(`permissions ${permissions} do not fit in 32 bits`);
+      expect(api.authenticate).not.toHaveBeenCalled();
+    },
+  );
+
+  it("refuses a member already in the application stream with other permissions", async () => {
+    serve(await buildTree(share(APP, alice), share(APP, agentA)));
+
+    await expect(
+      createSdk().addMember(trustchain, ALICE, { ...agentA, permissions: Permissions.OWNER }),
+    ).rejects.toThrow(
+      `member ${agentA.id} is already in ${APP} with permissions ${Permissions.KEY_READER}`,
+    );
+    expect(api.putCommands).not.toHaveBeenCalled();
+  });
+
+  it("refuses a closed application stream, as restoreTrustchain", async () => {
+    serve(await buildTree(share(APP, alice), close(APP)));
+
+    const added = createSdk().addMember(trustchain, ALICE, agentA);
+
+    await expect(added).rejects.toBeInstanceOf(TrustchainEjected);
+    await expect(added).rejects.toThrow(`application stream ${APP} is closed`);
+    expect(api.putCommands).not.toHaveBeenCalled();
+  });
+});
+
+describe("addMemberToApplicationWithDevice", () => {
+  it("adds the member to the latest stream of the application, signed by the device", async () => {
     serve(await buildTree(share(APP, alice), close(APP), share(NEXT_APP, alice)));
 
-    await createSdk().addMember(trustchain, ALICE, agentA, { deviceId: "device" });
+    await expect(
+      createSdk().addMemberToApplicationWithDevice("device", trustchain, agentA),
+    ).resolves.toBe(NEXT_APP);
 
     const requests = await requestBodies(api.putCommands);
     expect(requests).toEqual([{ path: NEXT_APP, blocks: [expect.any(String)] }]);
@@ -229,16 +329,121 @@ describe("addMember", () => {
     expect(api.authenticate).not.toHaveBeenCalled();
   });
 
-  it("with a device, adds the member to the existing stream at the given path", async () => {
+  it("uses the application of the trustchain, not the one of the SDK", async () => {
+    const ledgerSync = "m/0'/16'/0'";
+    serve(await buildTree(share(APP, alice), share(ledgerSync, alice)));
+
+    await expect(
+      createSdk().addMemberToApplicationWithDevice(
+        "device",
+        { ...trustchain, applicationPath: ledgerSync },
+        agentA,
+      ),
+    ).resolves.toBe(ledgerSync);
+
+    const requests = await requestBodies(api.putCommands);
+    expect(requests).toEqual([{ path: ledgerSync, blocks: [expect.any(String)] }]);
+  });
+
+  it("resolves to the stream without a device signature when the member is already there", async () => {
+    serve(await buildTree(share(APP, alice), share(APP, agentA)));
+
+    await expect(
+      createSdk().addMemberToApplicationWithDevice("device", trustchain, agentA),
+    ).resolves.toBe(APP);
+
+    expect(api.putCommands).not.toHaveBeenCalled();
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a closed latest stream before asking the device", async () => {
+    serve(await buildTree(share(APP, alice), close(APP)));
+
+    const added = createSdk().addMemberToApplicationWithDevice("device", trustchain, agentA);
+
+    await expect(added).rejects.toThrow(`stream ${APP} is closed`);
+    await expect(added).rejects.not.toBeInstanceOf(TrustchainEjected);
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a member already there with other permissions before asking the device", async () => {
+    serve(await buildTree(share(APP, alice), share(APP, agentA)));
+
+    await expect(
+      createSdk().addMemberToApplicationWithDevice("device", trustchain, {
+        ...agentA,
+        permissions: Permissions.OWNER,
+      }),
+    ).rejects.toThrow(
+      `member ${agentA.id} is already in ${APP} with permissions ${Permissions.KEY_READER}`,
+    );
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses an application without a stream", async () => {
+    serve(await buildTree(share(APP, alice)));
+
+    await expect(
+      createSdk().addMemberToApplicationWithDevice(
+        "device",
+        { ...trustchain, applicationPath: "m/0'/16'/0'" },
+        agentA,
+      ),
+    ).rejects.toThrow("stream m/0'/16'/0' is missing, create it with createStreamWithDevice");
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses permissions that do not fit in 32 bits before any request", async () => {
+    await expect(
+      createSdk().addMemberToApplicationWithDevice("device", trustchain, {
+        ...agentA,
+        permissions: 2 ** 32,
+      }),
+    ).rejects.toThrow(`permissions ${2 ** 32} do not fit in 32 bits`);
+    expect(hw.withJwt).not.toHaveBeenCalled();
+  });
+
+  it.each([SUBTREE, "m/0'/18'"])(
+    "rejects the application path %s before any request",
+    async applicationPath => {
+      await expect(
+        createSdk().addMemberToApplicationWithDevice(
+          "device",
+          { ...trustchain, applicationPath },
+          agentA,
+        ),
+      ).rejects.toThrow(`path ${applicationPath} must be m/0'/<application>'/<generation>'`);
+      expect(hw.withJwt).not.toHaveBeenCalled();
+    },
+  );
+
+  it("passes the callbacks to the device", async () => {
+    serve(await buildTree(share(APP, alice)));
+    const callbacks = { onStartRequestUserInteraction: jest.fn() };
+
+    await createSdk().addMemberToApplicationWithDevice("device", trustchain, agentA, callbacks);
+
+    expect(hw.withJwt.mock.calls).toEqual([
+      ["device", expect.any(Function), "cache", callbacks],
+      ["device", expect.any(Function), "cache", callbacks],
+    ]);
+    expect(hw.withHw).toHaveBeenCalledWith("device", expect.any(Function), callbacks);
+    expect(hw.withHw).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("addMemberToStreamWithDevice", () => {
+  it("adds the member to the existing stream at the given path", async () => {
     serve(await buildTree(share(APP, alice), share(SUBTREE, agentA)));
 
-    await createSdk().addMember(trustchain, ALICE, agentB, { deviceId: "device", path: SUBTREE });
+    await createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, agentB);
 
     expect(api.postDerivation).not.toHaveBeenCalled();
     const requests = await requestBodies(api.putCommands);
     expect(requests).toEqual([{ path: SUBTREE, blocks: [expect.any(String)] }]);
     expect(requests[0].blocks[0]).toContain(agentB.id);
     expect(hw.withHw).toHaveBeenCalledTimes(1);
+    expect(api.authenticate).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -247,12 +452,10 @@ describe("addMember", () => {
   ])("does nothing when the member is already there with %s", async (_name, id) => {
     serve(await buildTree(share(APP, alice), share(SUBTREE, agentA)));
 
-    await createSdk().addMember(
-      trustchain,
-      ALICE,
-      { ...agentA, id },
-      { deviceId: "device", path: SUBTREE },
-    );
+    await createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, {
+      ...agentA,
+      id,
+    });
 
     expect(api.postDerivation).not.toHaveBeenCalled();
     expect(api.putCommands).not.toHaveBeenCalled();
@@ -264,7 +467,7 @@ describe("addMember", () => {
     const signed = { ...agentA, permissions: Permissions.OWNER & ~Permissions.KEY_REVOKER };
     serve(await buildTree(share(APP, alice), share(SUBTREE, signed)));
 
-    await createSdk().addMember(trustchain, ALICE, signed, { deviceId: "device", path: SUBTREE });
+    await createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, signed);
 
     expect(api.putCommands).not.toHaveBeenCalled();
     expect(hw.withHw).not.toHaveBeenCalled();
@@ -274,12 +477,10 @@ describe("addMember", () => {
     "refuses permissions %s that do not fit in 32 bits before any request",
     async permissions => {
       await expect(
-        createSdk().addMember(
-          trustchain,
-          ALICE,
-          { ...agentA, permissions },
-          { deviceId: "device" },
-        ),
+        createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, {
+          ...agentA,
+          permissions,
+        }),
       ).rejects.toThrow(`permissions ${permissions} do not fit in 32 bits`);
       expect(hw.withJwt).not.toHaveBeenCalled();
     },
@@ -292,7 +493,7 @@ describe("addMember", () => {
     );
 
     await expect(
-      createSdk().addMember(trustchain, ALICE, agentB, { deviceId: "device", path: below }),
+      createSdk().addMemberToStreamWithDevice("device", trustchain, below, agentB),
     ).rejects.toThrow(
       `stream ${below} must be below open streams of the latest generation (${AGENT})`,
     );
@@ -300,41 +501,20 @@ describe("addMember", () => {
     expect(hw.withHw).not.toHaveBeenCalled();
   });
 
-  it("names the newer generation to a member without a device too", async () => {
-    serve(await buildTree(share(APP, alice), share(`${APP}/7'/1'`, agentA)));
+  it("refuses a member already in the stream with other permissions", async () => {
+    serve(await buildTree(share(APP, alice), share(SUBTREE, agentA)));
 
     await expect(
-      createSdk().addMember(trustchain, ALICE, agentB, { path: `${APP}/7'/0'` }),
-    ).rejects.toThrow(`stream ${APP}/7'/0' was replaced by ${APP}/7'/1'`);
+      createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, {
+        ...agentA,
+        permissions: Permissions.OWNER,
+      }),
+    ).rejects.toThrow(
+      `member ${agentA.id} is already in ${SUBTREE} with permissions ${Permissions.KEY_READER}`,
+    );
+    expect(api.putCommands).not.toHaveBeenCalled();
+    expect(hw.withHw).not.toHaveBeenCalled();
   });
-
-  it.each<[string, TrustchainStep[], string, AddMemberOptions | undefined]>([
-    ["the application stream", [share(APP, alice), share(APP, agentA)], APP, undefined],
-    [
-      "the stream at the given path",
-      [share(APP, alice), share(SUBTREE, agentA)],
-      SUBTREE,
-      { deviceId: "device", path: SUBTREE },
-    ],
-  ])(
-    "refuses a member already in %s with other permissions",
-    async (_name, steps, path, options) => {
-      serve(await buildTree(...steps));
-
-      await expect(
-        createSdk().addMember(
-          trustchain,
-          ALICE,
-          { ...agentA, permissions: Permissions.OWNER },
-          options,
-        ),
-      ).rejects.toThrow(
-        `member ${agentA.id} is already in ${path} with permissions ${Permissions.KEY_READER}`,
-      );
-      expect(api.putCommands).not.toHaveBeenCalled();
-      expect(hw.withHw).not.toHaveBeenCalled();
-    },
-  );
 
   it.each([
     ["the application stream", [share(NEXT_APP, alice)], APP, NEXT_APP],
@@ -356,47 +536,19 @@ describe("addMember", () => {
       serve(await buildTree(...steps));
 
       await expect(
-        createSdk().addMember(trustchain, ALICE, agentB, { deviceId: "device", path: replaced }),
+        createSdk().addMemberToStreamWithDevice("device", trustchain, replaced, agentB),
       ).rejects.toThrow(`stream ${replaced} was replaced by ${newer}`);
       expect(api.postDerivation).not.toHaveBeenCalled();
       expect(hw.withHw).not.toHaveBeenCalled();
     },
   );
 
-  it("signs with a member that is only in the stream at the given path", async () => {
-    const agentKeyPair = crypto.randomKeypair();
-    const agent = {
-      id: crypto.to_hex(agentKeyPair.publicKey),
-      name: "agent",
-      permissions: Permissions.OWNER,
-    };
-    serve(await buildTree(share(APP, alice), share(SUBTREE, agent)));
-    api.authenticate.mockReturnValue({
-      access_token: "SOFTWARE JWT",
-      permissions: { ROOTID: { [SUBTREE]: "ffffffff" } },
-    });
-    const agentCredentials = {
-      pubkey: agent.id,
-      privatekey: crypto.to_hex(agentKeyPair.privateKey),
-    };
-
-    await createSdk().addMember(trustchain, agentCredentials, agentB, { path: SUBTREE });
-
-    const requests = await requestBodies(api.putCommands);
-    expect(requests).toEqual([{ path: SUBTREE, blocks: [expect.any(String)] }]);
-    expect(requests[0].blocks[0]).toContain(agentB.id);
-    expect(hw.withJwt).not.toHaveBeenCalled();
-  });
-
-  it.each<[string, AddMemberOptions]>([
-    ["without a device", { path: SUBTREE }],
-    ["with a device", { path: SUBTREE, deviceId: "device" }],
-  ])("refuses a missing stream %s", async (_name, options) => {
+  it("refuses a missing stream", async () => {
     serve(await buildTree(share(APP, alice)));
 
-    await expect(createSdk().addMember(trustchain, ALICE, agentA, options)).rejects.toThrow(
-      `stream ${SUBTREE} is missing, create it with createStreamWithDevice`,
-    );
+    await expect(
+      createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, agentA),
+    ).rejects.toThrow(`stream ${SUBTREE} is missing, create it with createStreamWithDevice`);
     expect(api.postDerivation).not.toHaveBeenCalled();
     expect(hw.withHw).not.toHaveBeenCalled();
   });
@@ -407,38 +559,19 @@ describe("addMember", () => {
   ])("refuses a closed stream for %s", async (_name, member) => {
     serve(await buildTree(share(APP, alice), share(SUBTREE, agentA), close(SUBTREE)));
 
-    await expect(
-      createSdk().addMember(trustchain, ALICE, member, { deviceId: "device", path: SUBTREE }),
-    ).rejects.toThrow(`stream ${SUBTREE} is closed`);
+    const added = createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, member);
+
+    await expect(added).rejects.toThrow(`stream ${SUBTREE} is closed`);
+    await expect(added).rejects.not.toBeInstanceOf(TrustchainEjected);
     expect(api.putCommands).not.toHaveBeenCalled();
     expect(hw.withHw).not.toHaveBeenCalled();
   });
 
-  it("refuses a closed application stream without options, as restoreTrustchain", async () => {
-    serve(await buildTree(share(APP, alice), close(APP)));
-
-    const added = createSdk().addMember(trustchain, ALICE, agentA);
-
-    await expect(added).rejects.toBeInstanceOf(TrustchainEjected);
-    await expect(added).rejects.toThrow(`application stream ${APP} is closed`);
-    expect(api.putCommands).not.toHaveBeenCalled();
-  });
-
-  it("does not type callbacks without a device", () => {
-    // @ts-expect-error callbacks are for the device
-    const options: AddMemberOptions = { path: SUBTREE, callbacks: {} };
-    expect(options.path).toBe(SUBTREE);
-  });
-
-  it("passes the device callbacks to the device", async () => {
+  it("passes the callbacks to the device", async () => {
     serve(await buildTree(share(APP, alice), share(SUBTREE, agentA)));
     const callbacks = { onStartRequestUserInteraction: jest.fn() };
 
-    await createSdk().addMember(trustchain, ALICE, agentB, {
-      deviceId: "device",
-      path: SUBTREE,
-      callbacks,
-    });
+    await createSdk().addMemberToStreamWithDevice("device", trustchain, SUBTREE, agentB, callbacks);
 
     expect(hw.withJwt.mock.calls).toEqual([
       ["device", expect.any(Function), "cache", callbacks],
@@ -464,7 +597,7 @@ describe("addMember", () => {
     "m/0'/18'/0'/7'/4294967296'",
   ])("rejects the path %s", async path => {
     await expect(
-      createSdk().addMember(trustchain, ALICE, agentA, { deviceId: "device", path }),
+      createSdk().addMemberToStreamWithDevice("device", trustchain, path, agentA),
     ).rejects.toThrow(
       `path ${path} must be m/0'/<application>'/<generation>' followed by any number of hardened <object>'/<generation>' pairs`,
     );
@@ -600,6 +733,265 @@ describe("createStreamWithDevice", () => {
       walletSyncEncryptionKey: crypto.to_hex(key.slice(0, 32)),
     });
   });
+});
+
+describe("prepareApplicationStreamRotationWithDevice", () => {
+  it("creates the next generation with only the retained member and returns the trustchain on it", async () => {
+    const tree = await buildTree(share(APP, alice), share(APP, agentA));
+    serve(tree);
+
+    const rotated = await createSdk().prepareApplicationStreamRotationWithDevice(
+      "device",
+      trustchain,
+      ALICE,
+      alice,
+    );
+
+    const next = await postedTree(tree, NEXT_APP);
+    expect((await next.getChild(NEXT_APP)?.resolve())?.getMembersData()).toEqual([alice]);
+    const key = await device.readKey(next, DerivationPath.toIndexArray(NEXT_APP));
+    expect(rotated).toEqual({
+      rootId: "ROOTID",
+      applicationPath: NEXT_APP,
+      walletSyncEncryptionKey: crypto.to_hex(key.slice(0, 32)),
+    });
+    expect(api.putCommands).not.toHaveBeenCalled();
+    expect(hw.withHw).toHaveBeenCalledTimes(1);
+    expect(api.authenticate).not.toHaveBeenCalled();
+  });
+
+  it("returns the next generation a previous call created without a device signature", async () => {
+    const tree = await buildTree(share(APP, alice), share(NEXT_APP, alice));
+    serve(tree);
+
+    const rotated = await createSdk().prepareApplicationStreamRotationWithDevice(
+      "device",
+      trustchain,
+      ALICE,
+      { ...alice, id: alice.id.toUpperCase() },
+    );
+
+    const key = await device.readKey(tree, DerivationPath.toIndexArray(NEXT_APP));
+    expect(rotated).toEqual({
+      rootId: "ROOTID",
+      applicationPath: NEXT_APP,
+      walletSyncEncryptionKey: crypto.to_hex(key.slice(0, 32)),
+    });
+    expect(api.postDerivation).not.toHaveBeenCalled();
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["another member too", [share(NEXT_APP, alice), share(NEXT_APP, agentA)]],
+    ["the retained member with other permissions", [share(NEXT_APP, { ...alice, permissions: 1 })]],
+  ])("refuses a next generation holding %s before asking the device", async (_name, steps) => {
+    serve(await buildTree(share(APP, alice), ...steps));
+
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice("device", trustchain, ALICE, alice),
+    ).rejects.toThrow(`stream ${NEXT_APP} must hold only the retained member`);
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a closed next generation", async () => {
+    serve(await buildTree(share(APP, alice), share(NEXT_APP, alice), close(NEXT_APP)));
+
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice("device", trustchain, ALICE, alice),
+    ).rejects.toThrow(`stream ${NEXT_APP} is closed`);
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a retained member other than the member of the credentials before any request", async () => {
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice("device", trustchain, ALICE, agentA),
+    ).rejects.toThrow("the retained member must be the member of memberCredentials");
+    expect(hw.withJwt).not.toHaveBeenCalled();
+  });
+
+  it("refuses a retained member with other permissions than in the current generation", async () => {
+    serve(await buildTree(share(APP, alice)));
+    const retained = { ...alice, permissions: Permissions.KEY_READER };
+
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice("device", trustchain, ALICE, retained),
+    ).rejects.toThrow(
+      `the retained member must be in ${APP} with permissions ${Permissions.KEY_READER}`,
+    );
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a closed current generation before asking the device", async () => {
+    serve(await buildTree(share(APP, alice), close(APP)));
+
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice("device", trustchain, ALICE, alice),
+    ).rejects.toThrow(`stream ${APP} is closed`);
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a missing current generation before asking the device", async () => {
+    serve(await buildTree(share(APP, alice)));
+
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice(
+        "device",
+        { ...trustchain, applicationPath: NEXT_APP },
+        ALICE,
+        alice,
+      ),
+    ).rejects.toThrow(`stream ${NEXT_APP} is missing`);
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a next generation already replaced by a newer one before asking the device", async () => {
+    serve(await buildTree(share(APP, alice), share("m/0'/18'/2'", alice)));
+
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice("device", trustchain, ALICE, alice),
+    ).rejects.toThrow(`stream ${NEXT_APP} was replaced by m/0'/18'/2'`);
+    expect(hw.withHw).not.toHaveBeenCalled();
+  });
+
+  it("refuses permissions that do not fit in 32 bits before any request", async () => {
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice("device", trustchain, ALICE, {
+        ...alice,
+        permissions: 2 ** 32,
+      }),
+    ).rejects.toThrow(`permissions ${2 ** 32} do not fit in 32 bits`);
+    expect(hw.withJwt).not.toHaveBeenCalled();
+  });
+
+  it.each([SUBTREE, "m/0'/18'"])(
+    "rejects the application path %s before any request",
+    async applicationPath => {
+      await expect(
+        createSdk().prepareApplicationStreamRotationWithDevice(
+          "device",
+          { ...trustchain, applicationPath },
+          ALICE,
+          alice,
+        ),
+      ).rejects.toThrow(`path ${applicationPath} must be m/0'/<application>'/<generation>'`);
+      expect(hw.withJwt).not.toHaveBeenCalled();
+    },
+  );
+
+  it("passes the callbacks to the device", async () => {
+    serve(await buildTree(share(APP, alice)));
+    const callbacks = { onStartRequestUserInteraction: jest.fn() };
+
+    await createSdk().prepareApplicationStreamRotationWithDevice(
+      "device",
+      trustchain,
+      ALICE,
+      alice,
+      callbacks,
+    );
+
+    expect(hw.withJwt.mock.calls).toEqual([
+      ["device", expect.any(Function), "cache", callbacks],
+      ["device", expect.any(Function), "cache", callbacks],
+    ]);
+    expect(hw.withHw).toHaveBeenCalledWith("device", expect.any(Function), callbacks);
+    expect(hw.withHw).toHaveBeenCalledTimes(1);
+  });
+
+  it("drops the member login of the current generation", async () => {
+    const tree = await buildTree(share(APP, alice));
+    serve(tree);
+    const sdk = createSdk();
+    await sdk.getApplicationStream(trustchain, ALICE);
+
+    const rotated = await sdk.prepareApplicationStreamRotationWithDevice(
+      "device",
+      trustchain,
+      ALICE,
+      alice,
+    );
+    serve(await postedTree(tree, NEXT_APP));
+    api.authenticate.mockReturnValue({
+      access_token: "SOFTWARE JWT",
+      permissions: { ROOTID: { [NEXT_APP]: "ffffffff" } },
+    });
+
+    await expect(sdk.getApplicationStream(rotated, ALICE)).resolves.toEqual({
+      path: NEXT_APP,
+      members: [alice],
+      closed: false,
+    });
+    expect(api.authenticate).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuses a next generation past the largest hardened index before any request", async () => {
+    const applicationPath = "m/0'/18'/2147483647'";
+
+    await expect(
+      createSdk().prepareApplicationStreamRotationWithDevice(
+        "device",
+        { ...trustchain, applicationPath },
+        ALICE,
+        alice,
+      ),
+    ).rejects.toThrow("path m/0'/18'/2147483648' must be m/0'/<application>'/<generation>'");
+    expect(hw.withJwt).not.toHaveBeenCalled();
+  });
+});
+
+describe("closeApplicationStreamWithDevice", () => {
+  it("closes the application stream of the trustchain with the device", async () => {
+    serve(await buildTree(share(APP, alice), share(SUBTREE, agentA)));
+
+    await expect(createSdk().closeApplicationStreamWithDevice("device", trustchain)).resolves.toBe(
+      true,
+    );
+
+    const requests = await requestBodies(api.putCommands);
+    expect(requests).toEqual([{ path: APP, blocks: [expect.any(String)] }]);
+    expect(commandTypes(requests[0].blocks[0])).toEqual([CommandType.CloseStream]);
+    expect(hw.refreshJwt).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes the callbacks to the device", async () => {
+    serve(await buildTree(share(APP, alice)));
+    const callbacks = { onStartRequestUserInteraction: jest.fn() };
+
+    await createSdk().closeApplicationStreamWithDevice("device", trustchain, callbacks);
+
+    expect(hw.withJwt.mock.calls).toEqual([
+      ["device", expect.any(Function), "cache", callbacks],
+      ["device", expect.any(Function), "cache", callbacks],
+    ]);
+    expect(hw.withHw).toHaveBeenCalledWith("device", expect.any(Function), callbacks);
+    expect(hw.withHw).toHaveBeenCalledTimes(1);
+    expect(hw.refreshJwt).toHaveBeenCalledWith("device", callbacks);
+  });
+
+  it.each([
+    ["already closed", [share(APP, alice), close(APP)], APP],
+    ["missing", [share(APP, alice)], NEXT_APP],
+  ])("does nothing when the stream is %s", async (_name, steps, applicationPath) => {
+    serve(await buildTree(...steps));
+
+    await expect(
+      createSdk().closeApplicationStreamWithDevice("device", { ...trustchain, applicationPath }),
+    ).resolves.toBe(false);
+
+    expect(api.putCommands).not.toHaveBeenCalled();
+    expect(hw.withHw).not.toHaveBeenCalled();
+    expect(hw.refreshJwt).not.toHaveBeenCalled();
+  });
+
+  it.each([SUBTREE, "m/0'/18'"])(
+    "rejects the application path %s before any request",
+    async applicationPath => {
+      await expect(
+        createSdk().closeApplicationStreamWithDevice("device", { ...trustchain, applicationPath }),
+      ).rejects.toThrow(`path ${applicationPath} must be m/0'/<application>'/<generation>'`);
+      expect(hw.withJwt).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("closeStreamWithDevice", () => {

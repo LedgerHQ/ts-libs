@@ -12,7 +12,6 @@ import {
   TrustchainLifecycle,
   GetOrCreateTrustchainCallbacks,
   TrustchainStream,
-  AddMemberOptions,
   GetStreamsOptions,
 } from "./types";
 import {
@@ -343,21 +342,19 @@ export class SDK implements TrustchainSDK {
     trustchain: Trustchain,
     memberCredentials: MemberCredentials,
     member: TrustchainMember,
-    options: AddMemberOptions = {},
   ): Promise<void> {
-    const { path, deviceId, callbacks } = options;
-    if (path !== undefined) assertStreamPath(path);
     assertPermissions(member.permissions);
-    const { withJwt, withDevice } =
-      deviceId === undefined
-        ? // a member of the stream at path alone has no permissions on the application path
-          this.memberSigner(trustchain, memberCredentials, path !== undefined)
-        : this.deviceSigner(deviceId, callbacks);
-    const target = await withJwt(jwt => this.fetchTarget(jwt, trustchain.rootId, path));
-    await assertCanAddMember(target.streamTree, target.path, member, options);
+    const { withJwt, withDevice } = this.memberSigner(trustchain, memberCredentials);
+    const { streamTree, applicationRootPath, resolved } = await withJwt(jwt =>
+      this.fetchTrustchainAndResolve(jwt, trustchain.rootId, this.context.applicationId),
+    );
+    if (resolved.isClosed()) {
+      throw new TrustchainEjected(`application stream ${applicationRootPath} is closed`);
+    }
+    await assertCanAddMember(streamTree, applicationRootPath, member);
     await this.pushMember(
-      target.streamTree,
-      target.path,
+      streamTree,
+      applicationRootPath,
       trustchain.rootId,
       withJwt,
       withDevice,
@@ -370,10 +367,11 @@ export class SDK implements TrustchainSDK {
     memberCredentials: MemberCredentials,
     options: GetStreamsOptions,
   ): Promise<TrustchainStream[]> {
-    const { withJwt } =
-      options.deviceId === undefined
-        ? this.memberSigner(trustchain, memberCredentials, options.ignorePermissionsChecks)
-        : this.deviceSigner(options.deviceId, options.callbacks);
+    const { withJwt } = this.memberSigner(
+      trustchain,
+      memberCredentials,
+      options.ignorePermissionsChecks,
+    );
     const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
     return Promise.all(
       Object.keys(streamTree.serialize())
@@ -384,6 +382,55 @@ export class SDK implements TrustchainSDK {
           return stream ? [describeStream(path, stream)] : [];
         }),
     );
+  }
+
+  async getApplicationStream(
+    trustchain: Trustchain,
+    memberCredentials: MemberCredentials,
+    options?: { ignorePermissionsChecks?: boolean },
+  ): Promise<TrustchainStream | undefined> {
+    const path = trustchain.applicationPath;
+    parseApplicationPath(path);
+    const { withJwt } = this.memberSigner(
+      trustchain,
+      memberCredentials,
+      options?.ignorePermissionsChecks,
+    );
+    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    const stream = streamTree.getChild(path);
+    return stream ? describeStream(path, stream) : undefined;
+  }
+
+  async addMemberToApplicationWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    member: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<string> {
+    const { applicationId } = parseApplicationPath(trustchain.applicationPath);
+    assertPermissions(member.permissions);
+    const { withJwt, withDevice } = this.deviceSigner(deviceId, callbacks);
+    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    // another client may have rotated the stream since trustchain was resolved
+    const path = streamTree.getApplicationRootPath(applicationId);
+    await assertCanAddMember(streamTree, path, member);
+    await this.pushMember(streamTree, path, trustchain.rootId, withJwt, withDevice, member);
+    return path;
+  }
+
+  async addMemberToStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    path: string,
+    member: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<void> {
+    assertStreamPath(path);
+    assertPermissions(member.permissions);
+    const { withJwt, withDevice } = this.deviceSigner(deviceId, callbacks);
+    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    await assertCanAddMember(streamTree, path, member);
+    await this.pushMember(streamTree, path, trustchain.rootId, withJwt, withDevice, member);
   }
 
   async createStreamWithDevice(
@@ -402,6 +449,69 @@ export class SDK implements TrustchainSDK {
     await this.pushMember(streamTree, path, trustchain.rootId, withJwt, withDevice, member);
   }
 
+  async prepareApplicationStreamRotationWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    memberCredentials: MemberCredentials,
+    retainedMember: TrustchainMember,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<Trustchain> {
+    const source = trustchain.applicationPath;
+    const { applicationId, generation } = parseApplicationPath(source);
+    invariant(
+      sameMemberId(retainedMember, memberCredentials.pubkey),
+      "the retained member must be the member of memberCredentials",
+    );
+    assertPermissions(retainedMember.permissions);
+    const next = `m/0'/${applicationId}'/${generation + 1}'`;
+    assertStreamPath(next);
+    this.jwt = undefined;
+    const { withJwt, withDevice } = this.deviceSigner(deviceId, callbacks);
+    let { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    const nextStream = streamTree.getChild(next);
+    if (nextStream) {
+      // a previous run created it: the backend no longer lists the source
+      const { members, closed } = await describeStream(next, nextStream);
+      invariant(!closed, `stream ${next} is closed`);
+      invariant(
+        members.length === 1 && sameMember(members[0], retainedMember),
+        `stream ${next} must hold only the retained member`,
+      );
+    } else {
+      await assertCurrentGeneration(streamTree, next);
+      const sourceStream = streamTree.getChild(source);
+      invariant(sourceStream, `stream ${source} is missing`);
+      const { members, closed } = await describeStream(source, sourceStream);
+      invariant(!closed, `stream ${source} is closed`);
+      invariant(
+        members.some(m => sameMember(m, retainedMember)),
+        `the retained member must be in ${source} with permissions ${retainedMember.permissions}`,
+      );
+      streamTree = await this.pushMember(
+        streamTree,
+        next,
+        trustchain.rootId,
+        withJwt,
+        withDevice,
+        retainedMember,
+      );
+    }
+    return {
+      rootId: trustchain.rootId,
+      walletSyncEncryptionKey: await extractEncryptionKey(streamTree, next, memberCredentials),
+      applicationPath: next,
+    };
+  }
+
+  async closeApplicationStreamWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<boolean> {
+    parseApplicationPath(trustchain.applicationPath);
+    return this.closeWithDevice(deviceId, trustchain, trustchain.applicationPath, callbacks);
+  }
+
   async closeStreamWithDevice(
     deviceId: string,
     trustchain: Trustchain,
@@ -409,26 +519,7 @@ export class SDK implements TrustchainSDK {
     callbacks?: TrustchainDeviceCallbacks,
   ): Promise<boolean> {
     assertStreamPath(path);
-    this.jwt = undefined;
-    const { withJwt, withDevice } = this.deviceSigner(deviceId, callbacks);
-    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
-    const stream = streamTree.getChild(path);
-    if (!stream || (await stream.resolve()).isClosed()) return false;
-    const sendCloseStreamToAPI = await this.closeStream(
-      streamTree,
-      path,
-      trustchain.rootId,
-      withJwt,
-      withDevice,
-    );
-    await sendCloseStreamToAPI();
-    // deviceJwt have changed, proactively refresh it; the stream is closed already, so only log a failure
-    try {
-      await this.hwDeviceProvider.refreshJwt(deviceId, callbacks);
-    } catch (e) {
-      log("trustchain", "refreshing the device login after closing a stream failed", e);
-    }
-    return true;
+    return this.closeWithDevice(deviceId, trustchain, path, callbacks);
   }
 
   invalidateJwt() {
@@ -598,23 +689,6 @@ export class SDK implements TrustchainSDK {
     };
   }
 
-  private async fetchTarget(
-    jwt: JWT,
-    trustchainId: string,
-    path?: string,
-  ): Promise<{ streamTree: StreamTree; path: string }> {
-    if (path !== undefined) {
-      const { streamTree } = await this.fetchTrustchain(jwt, trustchainId);
-      return { streamTree, path };
-    }
-    const { streamTree, applicationRootPath } = await this.fetchTrustchainAndResolve(
-      jwt,
-      trustchainId,
-      this.context.applicationId,
-    );
-    return { streamTree, path: applicationRootPath };
-  }
-
   private async closeStream(
     streamTree: StreamTree,
     path: string,
@@ -632,6 +706,34 @@ export class SDK implements TrustchainSDK {
       blocks: [crypto.to_hex(commandStream)],
     };
     return () => withJwt(jwt => this.api.putCommands(jwt, trustchainId, request));
+  }
+
+  private async closeWithDevice(
+    deviceId: string,
+    trustchain: Trustchain,
+    path: string,
+    callbacks?: TrustchainDeviceCallbacks,
+  ): Promise<boolean> {
+    this.jwt = undefined;
+    const { withJwt, withDevice } = this.deviceSigner(deviceId, callbacks);
+    const { streamTree } = await withJwt(jwt => this.fetchTrustchain(jwt, trustchain.rootId));
+    const stream = streamTree.getChild(path);
+    if (!stream || (await stream.resolve()).isClosed()) return false;
+    const sendCloseStreamToAPI = await this.closeStream(
+      streamTree,
+      path,
+      trustchain.rootId,
+      withJwt,
+      withDevice,
+    );
+    await sendCloseStreamToAPI();
+    // deviceJwt have changed, proactively refresh it; the stream is closed already, so only log a failure
+    try {
+      await this.hwDeviceProvider.refreshJwt(deviceId, callbacks);
+    } catch (e) {
+      log("trustchain", "refreshing the device login after closing a stream failed", e);
+    }
+    return true;
   }
 }
 
@@ -681,29 +783,39 @@ function assertStreamPath(path: string): void {
   );
 }
 
+function parseApplicationPath(path: string): { applicationId: number; generation: number } {
+  assertStreamPath(path);
+  const [, , application, generation, ...below] = path.split("/");
+  invariant(below.length === 0, `path ${path} must be m/0'/<application>'/<generation>'`);
+  return {
+    applicationId: Number.parseInt(application, 10),
+    generation: Number.parseInt(generation, 10),
+  };
+}
+
 async function assertCanAddMember(
   streamTree: StreamTree,
   path: string,
   member: TrustchainMember,
-  options: AddMemberOptions,
 ): Promise<void> {
   await assertCurrentGeneration(streamTree, path);
   const stream = streamTree.getChild(path);
   invariant(stream, `stream ${path} is missing, create it with createStreamWithDevice`);
   const resolved = await stream.resolve();
-  if (resolved.isClosed()) {
-    if (options.path === undefined) {
-      throw new TrustchainEjected(`application stream ${path} is closed`);
-    }
-    throw new Error(`stream ${path} is closed`);
-  }
-  const current = resolved
-    .getMembersData()
-    .find(m => m.id.toLowerCase() === member.id.toLowerCase());
+  invariant(!resolved.isClosed(), `stream ${path} is closed`);
+  const current = resolved.getMembersData().find(m => sameMemberId(m, member.id));
   invariant(
     !current || samePermissions(current.permissions, member.permissions),
     `member ${member.id} is already in ${path} with permissions ${current?.permissions}`,
   );
+}
+
+function sameMemberId(member: TrustchainMember, id: string): boolean {
+  return member.id.toLowerCase() === id.toLowerCase();
+}
+
+function sameMember(a: TrustchainMember, b: TrustchainMember): boolean {
+  return sameMemberId(a, b.id) && samePermissions(a.permissions, b.permissions);
 }
 
 async function assertCurrentGeneration(streamTree: StreamTree, path: string): Promise<void> {
@@ -761,6 +873,5 @@ async function isMemberInStreamTree(
     return false;
   }
   const resolved = await child.resolve();
-  const members = resolved.getMembersData();
-  return members.some(m => m.id.toLowerCase() === member.id.toLowerCase());
+  return resolved.getMembersData().some(m => sameMemberId(m, member.id));
 }
