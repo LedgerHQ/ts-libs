@@ -1,5 +1,4 @@
 import { Permissions, crypto } from "@ledgerhq/hw-ledger-key-ring-protocol";
-import WebSocket from "isomorphic-ws";
 import { MemberCredentials, Trustchain, TrustchainMember } from "../types";
 import { MessageCipher, makeCipher, makeMessageCipher } from "./cipher";
 import {
@@ -477,10 +476,13 @@ function constantTimeEqual(a: unknown, b: string | undefined): boolean {
   return diff === 0;
 }
 
-function parseMessage(e: WebSocket.Data): Message {
+function parseMessage(data: unknown): Message {
+  if (typeof data !== "string") {
+    throw new QRCodeProtocolError("invalid json");
+  }
   let json: unknown;
   try {
-    json = JSON.parse(e.toString());
+    json = JSON.parse(data);
   } catch {
     throw new QRCodeProtocolError("invalid json");
   }

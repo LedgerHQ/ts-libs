@@ -72,9 +72,7 @@
     "@ledgerhq/live-network": "workspace:*",
     "@ledgerhq/logs": "workspace:*",
     "base64-js": "1",
-    "isomorphic-ws": "catalog:",
     "rxjs": "catalog:",
-    "ws": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -96,7 +94,8 @@
     "msw": "catalog:",
     "oxlint": "catalog:",
     "ts-node": "^10.9.2",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "ws": "catalog:"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json && tsc --project tsconfig.build.json -m esnext --moduleResolution bundler --outDir lib-es",
